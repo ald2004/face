@@ -1,3 +1,6 @@
 /.idea
 /cmake-build-*
-/src/libs
+/src/libs/*.a
+/src/libs/*.lib
+/src/libs/*.dll
+/src/libs/*.so
