@@ -1,0 +1,24 @@
+"C:\Program Files\JetBrains\CLion 2018.3.4\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Release "-GNMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%cd%/install -DOPENCV_INCLUDE=D:\projects\cpp\opencv-3.4.3\build_nmake\install\include -G "CodeBlocks - NMake Makefiles" D:\projects\cpp\face
+-- The C compiler identification is MSVC 19.0.24215.1
+-- The CXX compiler identification is MSVC 19.0.24215.1
+-- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/cl.exe
+-- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/cl.exe -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/cl.exe
+-- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/cl.exe -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenMP_C: -openmp (found version "2.0") 
+-- Found OpenMP_CXX: -openmp (found version "2.0") 
+-- Found OpenMP: TRUE (found version "2.0")  
+OPENMP FOUND
+-- operation system is Windows-10.0.17763
+-- current platform: Windows
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/projects/cpp/face/cmake-build-release-visual-studio

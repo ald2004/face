@@ -1,0 +1,8 @@
+D:/projects/cpp/face/cmake-build-release-visual-studio/CMakeFiles/edit_cache.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/CMakeFiles/rebuild_cache.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/src/CMakeFiles/face.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/src/CMakeFiles/edit_cache.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/src/CMakeFiles/rebuild_cache.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding/CMakeFiles/embedding.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding/CMakeFiles/edit_cache.dir
+D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding/CMakeFiles/rebuild_cache.dir

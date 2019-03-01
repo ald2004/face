@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="face"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="msvc8"/>
+		<Option virtualFolders="CMake Files\;CMake Files\src\;CMake Files\src\embedding\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 all"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 edit_cache"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="face">
+				<Option output="D:/projects/cpp/face/cmake-build-release-visual-studio/src/face.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio/src"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="D:/projects/cpp/face/src/include"/>
+					<Add directory="D:/projects/cpp/face/src/thirdparty/include"/>
+					<Add directory="D:/projects/cpp/opencv-3.4.3/build_nmake/install/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\winrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 face"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="face/fast">
+				<Option output="D:/projects/cpp/face/cmake-build-release-visual-studio/src/face.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio/src"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="D:/projects/cpp/face/src/include"/>
+					<Add directory="D:/projects/cpp/face/src/thirdparty/include"/>
+					<Add directory="D:/projects/cpp/opencv-3.4.3/build_nmake/install/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\winrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 face/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="embedding">
+				<Option output="D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding/embedding.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="D:/projects/cpp/face/src/include"/>
+					<Add directory="D:/projects/cpp/face/src/thirdparty/include"/>
+					<Add directory="D:/projects/cpp/opencv-3.4.3/build_nmake/install/include"/>
+					<Add directory="D:/projects/cpp/face/src/embedding/../include"/>
+					<Add directory="D:/projects/cpp/face/src/embedding/../thirdparty/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\winrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 embedding"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="embedding/fast">
+				<Option output="D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding/embedding.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/projects/cpp/face/cmake-build-release-visual-studio/src/embedding"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add directory="D:/projects/cpp/face/src/include"/>
+					<Add directory="D:/projects/cpp/face/src/thirdparty/include"/>
+					<Add directory="D:/projects/cpp/opencv-3.4.3/build_nmake/install/include"/>
+					<Add directory="D:/projects/cpp/face/src/embedding/../include"/>
+					<Add directory="D:/projects/cpp/face/src/embedding/../thirdparty/include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.10240.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\8.1\include\winrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 embedding/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\projects\cpp\face\cmake-build-release-visual-studio\src\embedding\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="D:/projects/cpp/face/src/detect.cpp">
+			<Option target="face"/>
+			<Option target="embedding"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/src/embedding/embedding.cpp">
+			<Option target="embedding"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/src/file_util.cpp">
+			<Option target="face"/>
+			<Option target="embedding"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/src/multivideoserver.cpp">
+			<Option target="face"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/src/recognize.cpp">
+			<Option target="face"/>
+			<Option target="embedding"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\"/>
+		</Unit>
+		<Unit filename="D:/projects/cpp/face/src/embedding/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\embedding\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
