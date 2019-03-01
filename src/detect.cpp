@@ -296,7 +296,8 @@ namespace Face {
         finalBbox_ = thirdBbox_;
     }
 
-    Detect::Detect(const std::string &model_path, const float *threshold) : Detect(model_path) {
+
+    void Detect::setThreshold(float *threshold) {
         memcpy(this->threshold, threshold, sizeof(this->threshold));
     }
 

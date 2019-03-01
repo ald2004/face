@@ -9,25 +9,11 @@ using namespace std;
 namespace Face {
 
     /**
-     * 获取文件大小
      * @param filepath
      * @return
      */
     int getFileLength(const char *filepath) {
         struct stat info{};
-//    struct stat {
-//        _dev_t     st_dev;        //文件所在磁盘驱动器号
-//        _ino_t     st_ino;        //inode，FAT、NTFS文件系统无意义
-//        unsigned short st_mode;   //文件、文件夹的标志
-//        short      st_nlink;      //非NTFS系统上通常为1
-//        short      st_uid;        //UNIX系统上为userid，windows上为0
-//        short      st_gid;        //UNIX系统上为groupid，windows上为0
-//        _dev_t     st_rdev;       //驱动器号，与st_dev相同
-//        _off_t     st_size;       //文件字节数
-//        time_t st_atime;          //上次访问时间
-//        time_t st_mtime;          //上次修改时间
-//        time_t st_ctime;          //创建时间
-//    };
         int result = stat(filepath, &info);
         if (!result) {
             int size = info.st_size;
@@ -37,7 +23,6 @@ namespace Face {
     }
 
     /**
-     * 保存
      * @param filepath
      * @param users
      * @param len
@@ -46,7 +31,7 @@ namespace Face {
         ofstream outfile(filepath, ios::binary);
         if (!outfile) {
             cerr << "open error!" << endl;
-            abort();//退出程序
+            exit(-1);
         }
 
         for (int i = 0; i < len; i++) {
@@ -58,7 +43,6 @@ namespace Face {
     }
 
     /**
-     * 读取对象
      * @param filepath
      * @param users
      * @return
@@ -68,7 +52,7 @@ namespace Face {
         ifstream infile(filepath, ios::binary);
         if (!infile) {
             cerr << "open error!" << endl;
-            abort();//退出程序
+            exit(-1);
         }
 
         int size = getFileLength(filepath);
@@ -83,10 +67,9 @@ namespace Face {
     }
 
     /**
-     * 递归列出文件名
-     * @param folderPath 搜索目录
+     * @param folderPath
      * @param files  bufferList
-     * @param depth  搜索深度，默认0
+     * @param depth
      */
     void listFiles(const string &folderPath, list<string> *files, int depth) {
 #ifdef _WIN32
@@ -99,9 +82,9 @@ namespace Face {
         }
         do {
             string filename = (folderPath + "\\" + FileInfo.name);
-            //判断是否有子目录
+            // has children
             if (FileInfo.attrib & _A_SUBDIR) {
-                //这个语句很重要
+                // curr dir & per dir
                 if ((depth - 1 > 0) && (strcmp(FileInfo.name, ".") != 0) && (strcmp(FileInfo.name, "..") != 0)) {
                     files->push_back(filename);
                     listFiles(filename, files, depth - 1);
@@ -144,13 +127,12 @@ namespace Face {
     }
 
     /**
-     * 创建 目录
      * @param pszDir
      * @return
      */
     int createDir(const char *pszDir) {
         int iRet;
-        //如果不存在,创建
+        //not exist
         iRet = ACCESS(pszDir, 0);
         if (iRet != 0) {
             iRet = MKDIR(pszDir);

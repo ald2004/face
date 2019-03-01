@@ -3,6 +3,10 @@ project(face)
 set(CMAKE_CXX_STANDARD 11)
 
 option(OPEN_OPENMP "OpenMP ON" ON)
+
+option(BUILD_FACE "BUILD_FACE" ON)
+option(BUILD_EMBEDDING "BUILD_EMBEDDING" ON)
+
 if (OPEN_OPENMP)
     FIND_PACKAGE(OpenMP REQUIRED)
     if (OPENMP_FOUND)
@@ -31,5 +35,9 @@ if (NOT DEFINED CMAKE_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
 endif ()
 
-add_subdirectory(src)
-
+if (BUILD_FACE)
+    add_subdirectory(src)
+endif ()
+if (BUILD_EMBEDDING)
+    add_subdirectory(src/embedding)
+endif ()

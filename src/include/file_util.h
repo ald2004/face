@@ -35,22 +35,20 @@ using namespace std;
 
 namespace Face {
     /**
-     * 递归列出文件名
-     * @param folderPath 搜索目录
+     * list file names
+     * @param folderPath
      * @param files  bufferList
-     * @param depth  搜索深度，默认0
+     * @param depth
      */
     void listFiles(const string &folderPath, list<string> *files, int depth = 0);
 
     /**
-     * 获取文件大小
      * @param filepath
      * @return
      */
     int getFileLength(const char *filepath);
 
     /**
-     * 保存
      * @param filepath
      * @param users
      * @param len
@@ -58,7 +56,6 @@ namespace Face {
     void saveUsers(const char *filepath, User *users, int len);
 
     /**
-     * 读取对象
      * @param filepath
      * @param users
      * @return
@@ -66,7 +63,6 @@ namespace Face {
     int readUsers(const char *filepath, User *users);
 
     /**
-     * 创建 目录
      * @param pszDir
      * @return
      */

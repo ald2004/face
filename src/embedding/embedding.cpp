@@ -34,9 +34,9 @@ int main(int argc, char **argv) {
     cout << "imgPath:" << imgPath << endl;
     cout << "tFaceModelDir:" << tFaceModelDir << endl;
 
-    // 文件
+    // buffer
     list<string> imgs;
-    // 遍历目录文件
+    // list file
     listFiles(imgPath, &imgs);
 
     int len = imgs.size();
@@ -46,10 +46,11 @@ int main(int argc, char **argv) {
     Face::Detect *mDetect;
     Face::Recognize *mRecognize;
 
-    float threshold[3] = {0.3f, 0.1f, 0.7f};
-    mDetect = new Face::Detect(tFaceModelDir, threshold);
+    mDetect = new Face::Detect(tFaceModelDir);
     mRecognize = new Face::Recognize(tFaceModelDir);
 
+    float threshold[3] = {0.3f, 0.1f, 0.7f};
+    mDetect->setThreshold(threshold);
     mDetect->SetThreadNum(detectThreadNum);
     mRecognize->SetThreadNum(recognizeThreadNum);
 
@@ -68,10 +69,10 @@ int main(int argc, char **argv) {
             auto numFace = static_cast<int32_t>(finalBbox.size());
             if (numFace == 0) {
                 cerr << filename << " -- no face!" << endl;
-                abort();//结束
+                continue;
+//                exit(-1);
             } else if (numFace > 1) {
                 cerr << filename << " -- some face!" << endl;
-//                abort();//结束
             }
 
             int maxIndex = 0;
@@ -108,8 +109,12 @@ int main(int argc, char **argv) {
             cout << "name:" << user.name << endl;
 
             Face::createDir((imgPath + "/output").c_str());
-            imwrite(imgPath + "/output/" + filename, dst_roi_dst);
 
+            string outpath;
+            outpath.append(imgPath);
+            outpath.append("/output/");
+            outpath.append(filename);
+            imwrite(outpath, dst_roi_dst);
 
         }
     }

@@ -24,8 +24,6 @@ namespace Face {
     public:
         explicit Detect(const std::string &model_path);
 
-        explicit Detect(const std::string &model_path, const float *threshold);
-
         Detect(std::vector<std::string> param_files, std::vector<std::string> bin_files);
 
         ~Detect();
@@ -35,6 +33,8 @@ namespace Face {
         void SetThreadNum(int threadNum);
 
         void start(const ncnn::Mat &img, std::vector<Bbox> &finalBbox);
+
+        void setThreshold(float threshold[3]);
 
     private:
         void generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox> &boundingBox_, float scale);

@@ -10,7 +10,7 @@
 namespace Face {
     class Recognize {
     public:
-        Recognize(const std::string &model_path);
+        explicit Recognize(const std::string &model_path);
 
         ~Recognize();
 

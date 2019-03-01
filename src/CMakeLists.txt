@@ -34,7 +34,6 @@ target_link_libraries(face
         #        opencv_videoio343
         #        opencv_videostab343
         )
-add_subdirectory(embedding)
 
 # copy static lib
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
