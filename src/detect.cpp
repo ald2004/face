@@ -296,6 +296,10 @@ namespace Face {
         finalBbox_ = thirdBbox_;
     }
 
+    Detect::Detect(const std::string &model_path, const float *threshold) : Detect(model_path) {
+        memcpy(this->threshold, threshold, sizeof(this->threshold));
+    }
+
     bool cmpScore(Bbox lsh, Bbox rsh) {
         if (lsh.score < rsh.score)
             return true;

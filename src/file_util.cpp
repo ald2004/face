@@ -8,12 +8,12 @@ using namespace std;
 
 namespace Face {
 
-/**
- * 获取文件大小
- * @param filepath
- * @return
- */
-    int get_file_length(const char *filepath) {
+    /**
+     * 获取文件大小
+     * @param filepath
+     * @return
+     */
+    int getFileLength(const char *filepath) {
         struct stat info{};
 //    struct stat {
 //        _dev_t     st_dev;        //文件所在磁盘驱动器号
@@ -36,13 +36,13 @@ namespace Face {
         return -1;
     }
 
-/**
- * 保存
- * @param filepath
- * @param users
- * @param len
- */
-    void save_user(const char *filepath, User *users, const int len) {
+    /**
+     * 保存
+     * @param filepath
+     * @param users
+     * @param len
+     */
+    void saveUsers(const char *filepath, User *users, int len) {
         ofstream outfile(filepath, ios::binary);
         if (!outfile) {
             cerr << "open error!" << endl;
@@ -57,13 +57,13 @@ namespace Face {
         outfile.close();
     }
 
-/**
- * 读取对象
- * @param filepath
- * @param users
- * @return
- */
-    int read_users(const char *filepath, User *users) {
+    /**
+     * 读取对象
+     * @param filepath
+     * @param users
+     * @return
+     */
+    int readUsers(const char *filepath, User *users) {
 
         ifstream infile(filepath, ios::binary);
         if (!infile) {
@@ -71,7 +71,7 @@ namespace Face {
             abort();//退出程序
         }
 
-        int size = get_file_length(filepath);
+        int size = getFileLength(filepath);
         const int len = size / sizeof(User);
 
         for (int i = 0; i < len; i++)
@@ -82,6 +82,12 @@ namespace Face {
         return len;
     }
 
+    /**
+     * 递归列出文件名
+     * @param folderPath 搜索目录
+     * @param files  bufferList
+     * @param depth  搜索深度，默认0
+     */
     void listFiles(const string &folderPath, list<string> *files, int depth) {
 #ifdef _WIN32
         _finddata_t FileInfo{};
@@ -135,5 +141,23 @@ namespace Face {
         chdir("..");
         closedir(dp);
 #endif
+    }
+
+    /**
+     * 创建 目录
+     * @param pszDir
+     * @return
+     */
+    int createDir(const char *pszDir) {
+        int iRet;
+        //如果不存在,创建
+        iRet = ACCESS(pszDir, 0);
+        if (iRet != 0) {
+            iRet = MKDIR(pszDir);
+            if (iRet != 0) {
+                return -1;
+            }
+        }
+        return 0;
     }
 }

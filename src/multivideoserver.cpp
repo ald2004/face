@@ -28,9 +28,9 @@ int main(int argc, char **argv) {
 
     const char *filepath = (embeddingPath + "/embedding.dat").c_str();
 
-    int len = get_file_length(filepath) / sizeof(User);
+    int len = getFileLength(filepath) / sizeof(User);
     User *users = (User *) malloc(len * sizeof(User));
-    int len2 = read_users(filepath, users);
+    int len2 = readUsers(filepath, users);
 
     cout << "-------------------------------" << endl;
     for (int i = 0; i < len2; i++) {
@@ -70,12 +70,7 @@ int main(int argc, char **argv) {
         cap >> frame;
         vector<Face::Bbox> box;
         dst = frame;
-//        cv::resize(frame, dst, cv::Size(600, 360), (0, 0), (0, 0), cv::INTER_LINEAR);
-//        mDetect->start(ncnn::Mat::from_pixels(frame.data, ncnn::Mat::PIXEL_BGR, frame.cols, frame.rows), box);
         mDetect->start(ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR, dst.cols, dst.rows), box);
-//        mDetect->start(
-//                ncnn::Mat::from_pixels_resize(frame.data, ncnn::Mat::PIXEL_BGR, frame.cols, frame.rows, 600, 360),
-//                box);
         auto num_face = static_cast<int32_t>(box.size());
 
         int out_size = 1 + num_face * 14;
@@ -94,7 +89,7 @@ int main(int argc, char **argv) {
             cv::Mat dst_roi = dst(rect);
 
             Mat dst_roi_dst;
-            cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), (0, 0), (0, 0), cv::INTER_LINEAR);
+            cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
             ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR, dst_roi_dst.cols,
                                                               dst_roi_dst.rows);
             vector<float> feature2;
@@ -120,7 +115,7 @@ int main(int argc, char **argv) {
 
             }
 
-            if (max > 0.6) {
+            if (max > 0.65) {
                 cout << "name:" << maxName << " similar:" << max << " time:" << (end - start) << "ms" << endl;
 //                imshow("2", imread(imgPath + "/" + maxName + ".jpg"));
             }

@@ -24,6 +24,8 @@ namespace Face {
     public:
         explicit Detect(const std::string &model_path);
 
+        explicit Detect(const std::string &model_path, const float *threshold);
+
         Detect(std::vector<std::string> param_files, std::vector<std::string> bin_files);
 
         ~Detect();
@@ -37,7 +39,7 @@ namespace Face {
     private:
         void generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox> &boundingBox_, float scale);
 
-        void nms(std::vector<Bbox> &boundingBox_, const float overlap_threshold, std::string modelname = "Union");
+        void nms(std::vector<Bbox> &boundingBox_, float overlap_threshold, std::string modelname = "Union");
 
         void refine(std::vector<Bbox> &vecBbox, const int &height, const int &width, bool square);
 
@@ -57,14 +59,15 @@ namespace Face {
         std::vector<Bbox> firstBbox_, secondBbox_, thirdBbox_;
         int img_w, img_h;
 
-    private:
-//        const float threshold[3] = { 0.8f, 0.8f, 0.6f };
-//        const float threshold[3] = {0.4f, 0.6f, 0.6f};
-//        const float threshold[3] = {0.6f, 0.7f, 0.7f};
-        const float threshold[3] = {0.3f, 0.1f, 0.7f};
+        float threshold[3] = {0.4f, 0.6f, 0.6f};
+//        float threshold[3] = {0.3f, 0.1f, 0.7f};
         int minsize = 100;
         const float pre_facetor = 0.709f;
         int threadnum = 1;
+
+//        const float threshold[3] = { 0.8f, 0.8f, 0.6f };
+//        const float threshold[3] = {0.4f, 0.6f, 0.6f};
+//        const float threshold[3] = {0.6f, 0.7f, 0.7f};
     };
 
     bool cmpScore(Bbox lsh, Bbox rsh);

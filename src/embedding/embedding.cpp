@@ -46,7 +46,8 @@ int main(int argc, char **argv) {
     Face::Detect *mDetect;
     Face::Recognize *mRecognize;
 
-    mDetect = new Face::Detect(tFaceModelDir);
+    float threshold[3] = {0.3f, 0.1f, 0.7f};
+    mDetect = new Face::Detect(tFaceModelDir, threshold);
     mRecognize = new Face::Recognize(tFaceModelDir);
 
     mDetect->SetThreadNum(detectThreadNum);
@@ -84,24 +85,26 @@ int main(int argc, char **argv) {
                                                                   dst_roi_dst.rows);
                 vector<float> feature2;
                 mRecognize->start(resize_mat_sub, feature2);
-                imshow("1", dst_roi_dst);
-                waitKey(1000);
+
+
+                ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR, dst_roi_dst.cols,
+                                                              dst_roi_dst.rows);
+                vector<float> feature;
+                float embedding[128];
+                mRecognize->start(resize_mat, feature);
+                memcpy(embedding, &feature[0], sizeof(embedding));
+
+
+                User user{name.c_str(), embedding};
+                users[index] = user;
+                cout << "name:" << user.name << endl;
+
+                Face::createDir((imgPath + "/output").c_str());
+                imwrite(imgPath + "/output/" + filename, dst_roi_dst);
             }
 
 
-            Mat mat1_dst;
-            cv::resize(mat, mat1_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
-            ncnn::Mat resize_mat = ncnn::Mat::from_pixels(mat1_dst.data, ncnn::Mat::PIXEL_BGR, mat1_dst.cols,
-                                                          mat1_dst.rows);
-            vector<float> feature;
-            float embedding[128];
-            mRecognize->start(resize_mat, feature);
-            memcpy(embedding, &feature[0], sizeof(embedding));
 
-
-            User user{name.c_str(), embedding};
-            users[index] = user;
-            cout << "name:" << user.name << endl;
         }
     }
 
@@ -110,9 +113,9 @@ int main(int argc, char **argv) {
 
     const char *filepath = "embedding.dat";
 
-    save_user(filepath, users, len);
+    saveUsers(filepath, users, len);
     User *users2 = (User *) malloc(len * sizeof(User));
-    int len2 = read_users(filepath, users2);
+    int len2 = readUsers(filepath, users2);
 
     cout << "-------------------------------" << endl;
     for (int i = 0; i < len2; i++) {
