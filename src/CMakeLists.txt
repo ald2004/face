@@ -58,3 +58,39 @@ add_custom_command(TARGET face POST_BUILD        # Adds a post-build event to em
         COMMAND ${CMAKE_COMMAND} -E copy_directory         # which executes "cmake - E copy_if_different..."
         "${CMAKE_CURRENT_SOURCE_DIR}/../imgs"                 # <--this is in-file
         ${CMAKE_BINARY_DIR}/imgs)                 # <--this is out-file path
+
+#install(TARGETS face ARCHIVE DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/model")
+
+install(TARGETS
+        face DESTINATION bin
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    install(FILES
+            ${CMAKE_BINARY_DIR}/src/libopencv_world.so
+            DESTINATION bin)
+elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    install(FILES
+            ${CMAKE_BINARY_DIR}/src/opencv_world343.dll
+            DESTINATION bin)
+endif ()
+
+install(FILES
+        model/face/det1.bin
+        model/face/det2.bin
+        model/face/det3.bin
+        model/face/det1.param
+        model/face/det2.param
+        model/face/det3.param
+        model/face/recognition.bin
+        model/face/recognition.param
+        DESTINATION model/face/)
+
+install(FILES
+        include/detect.h
+        include/file_util.h
+        include/recognize.h
+        include/User.h
+        DESTINATION include)
