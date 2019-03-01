@@ -62,47 +62,53 @@ int main(int argc, char **argv) {
 
             Mat mat = imread(img);
 
-            vector<Face::Bbox> box;
+            vector<Face::Bbox> finalBbox;
             mDetect->SetMinFace(40);
-            mDetect->start(ncnn::Mat::from_pixels(mat.data, ncnn::Mat::PIXEL_BGR, mat.cols, mat.rows), box);
-            auto num_face = static_cast<int32_t>(box.size());
-            if (num_face == 0) {
+            mDetect->start(ncnn::Mat::from_pixels(mat.data, ncnn::Mat::PIXEL_BGR, mat.cols, mat.rows), finalBbox);
+            auto numFace = static_cast<int32_t>(finalBbox.size());
+            if (numFace == 0) {
                 cerr << filename << " -- no face!" << endl;
                 abort();//结束
-            } else if (num_face > 1) {
+            } else if (numFace > 1) {
                 cerr << filename << " -- some face!" << endl;
 //                abort();//结束
             }
 
-            for (int i = 0; i < 1; i++) {
-                Rect rect(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
-                cv::Mat dst_roi = mat(rect);
-
-                Mat dst_roi_dst;
-                cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
-                ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR,
-                                                                  dst_roi_dst.cols,
-                                                                  dst_roi_dst.rows);
-                vector<float> feature2;
-                mRecognize->start(resize_mat_sub, feature2);
-
-
-                ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR, dst_roi_dst.cols,
-                                                              dst_roi_dst.rows);
-                vector<float> feature;
-                float embedding[128];
-                mRecognize->start(resize_mat, feature);
-                memcpy(embedding, &feature[0], sizeof(embedding));
-
-
-                User user{name.c_str(), embedding};
-                users[index] = user;
-                cout << "name:" << user.name << endl;
-
-                Face::createDir((imgPath + "/output").c_str());
-                imwrite(imgPath + "/output/" + filename, dst_roi_dst);
+            int maxIndex = 0;
+            float maxScore = 0;
+            for (int i = 0; i < numFace; i++) {
+                if (finalBbox[i].score > maxScore) {
+                    maxScore = finalBbox[i].score;
+                    maxIndex = i;
+                }
             }
+            Face::Bbox box = finalBbox[maxIndex];
+            Rect rect(box.x1, box.y1, box.x2 - box.x1, box.y2 - box.y1);
+            cv::Mat dst_roi = mat(rect);
 
+            Mat dst_roi_dst;
+            cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+            ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR,
+                                                              dst_roi_dst.cols,
+                                                              dst_roi_dst.rows);
+            vector<float> feature2;
+            mRecognize->start(resize_mat_sub, feature2);
+
+
+            ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR, dst_roi_dst.cols,
+                                                          dst_roi_dst.rows);
+            vector<float> feature;
+            float embedding[128];
+            mRecognize->start(resize_mat, feature);
+            memcpy(embedding, &feature[0], sizeof(embedding));
+
+
+            User user{name.c_str(), embedding};
+            users[index] = user;
+            cout << "name:" << user.name << endl;
+
+            Face::createDir((imgPath + "/output").c_str());
+            imwrite(imgPath + "/output/" + filename, dst_roi_dst);
 
 
         }
