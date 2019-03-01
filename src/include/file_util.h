@@ -10,7 +10,6 @@
 
 #include <direct.h>
 #include <io.h>
-
 #define ACCESS _access
 #define MKDIR(a) _mkdir((a))
 
@@ -18,6 +17,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <stdarg.h>
+#include "sys/stat.h"
 #define ACCESS access
 #define MKDIR(a) mkdir((a),0755)
 #endif
