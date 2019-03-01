@@ -4,3 +4,4 @@
 /src/libs/*.lib
 /src/libs/*.dll
 /src/libs/*.so
+/imgs/*.jpg
