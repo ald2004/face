@@ -71,17 +71,7 @@ int main(int argc, char **argv) {
         mDetect->start(ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR, dst.cols, dst.rows), box);
         auto num_face = static_cast<int32_t>(box.size());
 
-        int out_size = 1 + num_face * 14;
-        int *faceInfo = new int[out_size];
-        faceInfo[0] = num_face;
         for (int i = 0; i < num_face; i++) {
-            faceInfo[14 * i + 1] = box[i].x1;//left
-            faceInfo[14 * i + 2] = box[i].y1;//top
-            faceInfo[14 * i + 3] = box[i].x2;//right
-            faceInfo[14 * i + 4] = box[i].y2;//bottom
-            for (int j = 0; j < 10; j++) {
-                faceInfo[14 * i + 5 + j] = static_cast<int>(box[i].ppoint[j]);
-            }
 
             Rect rect(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
             cv::Mat dst_roi = dst(rect);
@@ -93,21 +83,19 @@ int main(int argc, char **argv) {
             vector<float> feature2;
             mRecognize->start(resize_mat_sub, feature2);
             imshow("1", dst_roi_dst);
-
-//            copy(feature2.begin(), feature2.end(), ostream_iterator<float>(cout, ","));
 //            cout << Face::calculEuclidianDistance(feature1, feature2) << endl;
             int64 end = clock();
 
             string maxName;
             double max = -10;
-            for (int i = 0; i < len2; i++) {
+            for (int j = 0; j < len2; j++) {
 
-                vector<float> feature(users[i].embedding, users[i].embedding + 128);
+                vector<float> feature(users[j].embedding, users[j].embedding + 128);
                 double similar = Face::calculCosSimilar(feature, feature2);
 
                 if (similar > max) {
                     max = similar;
-                    maxName = users[i].name;
+                    maxName = users[j].name;
                 }
 
 
