@@ -122,8 +122,13 @@ int main(int argc, char **argv) {
         }
 
         imshow("", dst);
-        if (waitKey(1) >= 0)
+
+        if ((cv::waitKey(2) & 0xEFFFFF) == 27)//esc
+        {
             stop = true;
+            break;
+        }
+
     }
 
     return 0;
