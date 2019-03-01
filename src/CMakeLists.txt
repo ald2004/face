@@ -59,6 +59,7 @@ add_custom_command(TARGET face POST_BUILD        # Adds a post-build event to em
         ${CMAKE_BINARY_DIR}/imgs)                 # <--this is out-file path
 
 #install(TARGETS face ARCHIVE DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/model")
+#[[
 
 install(TARGETS
         face DESTINATION bin
@@ -92,4 +93,8 @@ install(FILES
         include/file_util.h
         include/recognize.h
         include/User.h
-        DESTINATION include)
+        DESTINATION include)]]
+
+if (BUILD_EMBEDDING)
+    add_subdirectory(embedding)
+endif ()

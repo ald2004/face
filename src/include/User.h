@@ -5,8 +5,8 @@
 #ifndef FACE_USER_H
 #define FACE_USER_H
 
-#include<string.h>
-#include<string>
+#include "string"
+#include "string.h"
 
 namespace Face {
 
@@ -23,8 +23,6 @@ namespace Face {
             memcpy(this->name, name, sizeof(this->name));
             memcpy(this->embedding, embedding, sizeof(this->embedding));
         }
-
-
     };
 }
 

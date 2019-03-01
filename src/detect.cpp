@@ -60,7 +60,7 @@ namespace Face {
         //score p
         float *p = score.channel(1);//score.data + score.cstep;
         //float *plocal = location.data;
-        Bbox bbox;
+        Bbox bbox{};
         float inv_scale = 1.0f / scale;
         for (int row = 0; row < score.h; row++) {
             for (int col = 0; col < score.w; col++) {
@@ -97,11 +97,11 @@ namespace Face {
         int nPick = 0;
         std::multimap<float, int> vScores;
         const int num_boxes = boundingBox_.size();
-        vPick.resize(num_boxes);
+        vPick.resize((unsigned int) num_boxes);
         for (int i = 0; i < num_boxes; ++i) {
             vScores.insert(std::pair<float, int>(boundingBox_[i].score, i));
         }
-        while (vScores.size() > 0) {
+        while (!vScores.empty()) {
             int last = vScores.rbegin()->second;
             vPick[nPick] = last;
             nPick += 1;

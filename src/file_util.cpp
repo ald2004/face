@@ -3,6 +3,25 @@
 //
 
 #include "file_util.h"
+#include <fstream>
+#include <iostream>
+
+#ifdef _WIN32
+
+#include <direct.h>
+#include <io.h>
+
+#define ACCESS _access
+#define MKDIR(a) _mkdir((a))
+#else
+#include <unistd.h>
+#include <dirent.h>
+#include <stdarg.h>
+#include "sys/stat.h"
+#define ACCESS access
+#define MKDIR(a) mkdir((a),0755)
+#endif
+
 
 using namespace std;
 
@@ -75,7 +94,7 @@ namespace Face {
 #ifdef _WIN32
         _finddata_t FileInfo{};
         string strfind = folderPath + "\\*";
-        long Handle = _findfirst(strfind.c_str(), &FileInfo);
+        intptr_t Handle = _findfirst(strfind.c_str(), &FileInfo);
 
         if (Handle == -1L) {
             exit(-1);

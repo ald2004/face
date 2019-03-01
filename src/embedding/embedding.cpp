@@ -3,12 +3,10 @@
 //
 
 
-#include <opencv2/opencv.hpp>
-#include "User.h"
 #include "file_util.h"
 #include "detect.h"
 #include "recognize.h"
-
+#include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace std;

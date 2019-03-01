@@ -1,10 +1,8 @@
 
-#include <iostream>
-#include "detect.h"
-#include "User.h"
 #include "file_util.h"
-#include <opencv2/opencv.hpp>
+#include "detect.h"
 #include <recognize.h>
+#include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace Face;

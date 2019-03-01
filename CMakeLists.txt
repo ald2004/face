@@ -31,13 +31,10 @@ endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 set(OPENCV_INCLUDE "OPENCV_INCLUDE" CACHE PATH "opencv path")
 
-if (NOT DEFINED CMAKE_INSTALL_PREFIX)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
-endif ()
+#if (NOT DEFINED CMAKE_INSTALL_PREFIX)
+#    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
+#endif ()
 
 if (BUILD_FACE)
     add_subdirectory(src)
-endif ()
-if (BUILD_EMBEDDING)
-    add_subdirectory(src/embedding)
 endif ()
