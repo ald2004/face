@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
                 continue;
 //                exit(-1);
             } else if (numFace > 1) {
-                cerr << filename << " -- some face!" << endl;
+                cerr << filename << " -- many face!" << endl;
             }
 
             int maxIndex = 0;
@@ -88,12 +88,6 @@ int main(int argc, char **argv) {
 
             Mat dst_roi_dst;
             cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
-            ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR,
-                                                              dst_roi_dst.cols,
-                                                              dst_roi_dst.rows);
-            vector<float> feature2;
-            mRecognize->start(resize_mat_sub, feature2);
-
 
             ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR, dst_roi_dst.cols,
                                                           dst_roi_dst.rows);
@@ -101,7 +95,6 @@ int main(int argc, char **argv) {
             float embedding[128];
             mRecognize->start(resize_mat, feature);
             memcpy(embedding, &feature[0], sizeof(embedding));
-
 
             User user{name.c_str(), embedding};
             users[index] = user;

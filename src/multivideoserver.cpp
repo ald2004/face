@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
     cout << mDetect << endl;
 
 
-    VideoCapture cap("rtsp://admin:111111ab@192.168.100.252:554/h264/ch1/main/1");
-//    VideoCapture cap(0);
+//    VideoCapture cap("rtsp://admin:111111ab@192.168.100.252:554/h264/ch1/main/1");
+    VideoCapture cap(2);
     cout << cap.isOpened() << endl;
     if (!cap.isOpened()) {
         cout << "Failure to turn on video capture ." << endl;
