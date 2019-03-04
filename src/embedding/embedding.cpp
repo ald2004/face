@@ -20,6 +20,7 @@ int endsWith(const string &s, const string &sub) {
     return s.rfind(sub) == (s.length() - sub.length()) ? 1 : 0;
 }
 
+
 int main(int argc, char **argv) {
     // run  xxx/xxx.exe
     const string runPath = argv[0];

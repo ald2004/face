@@ -115,18 +115,18 @@ namespace Face {
 
         _findclose(Handle);
 #else
-        DIR *dp;
+        DIR *dir;
         struct dirent *entry;
-        struct stat statbuf;
-        if ((dp = opendir(folderPath.c_str())) == NULL) {
+        if ((dir = opendir(folderPath.c_str())) == NULL) {
             fprintf(stderr, "cannot open directory: %s\n", folderPath.c_str());
             return;
         }
-        chdir(folderPath.c_str());
-        while ((entry = readdir(dp)) != NULL) {
-            lstat(entry->d_name, &statbuf);
+        while ((entry = readdir(dir)) != NULL) {
+            struct stat s{};
             string filename = (folderPath + "/" + entry->d_name);
-            if (S_ISDIR(statbuf.st_mode)) {
+            lstat(filename.c_str(), &s);
+            cout << filename << endl;
+            if (S_ISDIR(s.st_mode)) {
 
                 if (strcmp(".", entry->d_name) == 0 ||
                     strcmp("..", entry->d_name) == 0)
@@ -140,8 +140,7 @@ namespace Face {
                 files->push_back(filename);
             }
         }
-        chdir("..");
-        closedir(dp);
+        closedir(dir);
 #endif
     }
 
