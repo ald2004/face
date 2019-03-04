@@ -1,3 +1,7 @@
+# README 
+## 依赖
+* OPENCV
+* NCNN
 ## NCNN BUILD Windows
 ```shell
 cmake -G"NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%cd%/install ^
@@ -12,6 +16,6 @@ mkdir build
 cd build
 cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ^
     -DCMAKE_INSTALL_PREFIX=./install ^
-    -DOpenCV_DIR=D:/projects/cpp/opencv-3.4.3/build_nmake/install ^
+    -DOPENCV_DIR=D:/projects/cpp/opencv-3.4.3/build_nmake/install ^
     -DNCNN_DIR=D:/ncnn/build-win32/install  ..
 ```

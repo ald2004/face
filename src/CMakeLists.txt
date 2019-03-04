@@ -66,7 +66,6 @@ endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 ]]
 
 #install(TARGETS face ARCHIVE DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/model")
-#[[
 
 install(TARGETS
         face DESTINATION bin
@@ -74,30 +73,15 @@ install(TARGETS
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    install(FILES
-            ${CMAKE_BINARY_DIR}/src/libopencv_world.so
-            DESTINATION bin)
-elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    install(FILES
-            ${CMAKE_BINARY_DIR}/src/opencv_world343.dll
-            DESTINATION bin)
-endif ()
+install(DIRECTORY model DESTINATION .
+        PATTERN "*.bin|*.param"
+        PERMISSIONS OWNER_READ GROUP_READ
+        )
 
-install(FILES
-        model/face/det1.bin
-        model/face/det2.bin
-        model/face/det3.bin
-        model/face/det1.param
-        model/face/det2.param
-        model/face/det3.param
-        model/face/recognition.bin
-        model/face/recognition.param
-        DESTINATION model/face/)
 
 install(FILES
         include/detect.h
         include/file_util.h
         include/recognize.h
         include/User.h
-        DESTINATION include)]]
+        DESTINATION include)
