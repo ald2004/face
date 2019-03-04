@@ -46,11 +46,11 @@ namespace Face {
      * @param users
      * @param len
      */
-    void saveUsers(const char *filepath, User *users, int len) {
+    bool saveUsers(const char *filepath, User *users, int len) {
         ofstream outfile(filepath, ios::binary);
         if (!outfile) {
             cerr << "open error!" << endl;
-            exit(-1);
+            return false;
         }
 
         for (int i = 0; i < len; i++) {
@@ -59,6 +59,7 @@ namespace Face {
         }
 
         outfile.close();
+        return true;
     }
 
     /**
@@ -71,7 +72,7 @@ namespace Face {
         ifstream infile(filepath, ios::binary);
         if (!infile) {
             cerr << "open error!" << endl;
-            exit(-1);
+            return -1;
         }
 
         int size = getFileLength(filepath);

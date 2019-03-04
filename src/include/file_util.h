@@ -33,7 +33,7 @@ namespace Face {
      * @param users
      * @param len
      */
-    void saveUsers(const char *filepath, User *users, int len);
+    bool saveUsers(const char *filepath, User *users, int len);
 
     /**
      * @param filepath

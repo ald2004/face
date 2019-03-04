@@ -54,16 +54,18 @@ int main(int argc, char **argv) {
     cout << mDetect << endl;
 
 
-//    VideoCapture cap("rtsp://admin:111111ab@192.168.100.252:554/h264/ch1/main/4");
-    VideoCapture cap(0);
+    VideoCapture cap("rtsp://admin:111111ab@192.168.100.252:554/h264/ch1/main/1");
+//    VideoCapture cap(0);
+    cout << cap.isOpened() << endl;
     if (!cap.isOpened()) {
+        cout << "Failure to turn on video capture ." << endl;
         return -1;
     }
     Mat frame;
     Mat dst;
 
     bool stop = false;
-    while (!stop || cap.isOpened()) {
+    while (!stop && cap.isOpened()) {
         int64 start = clock();
         cap >> frame;
         vector<Face::Bbox> box;
