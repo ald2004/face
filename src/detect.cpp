@@ -94,7 +94,7 @@ namespace Face {
         float minX = 0;
         float minY = 0;
         std::vector<int> vPick;
-        int nPick = 0;
+        unsigned int nPick = 0;
         std::multimap<float, int> vScores;
         const int num_boxes = boundingBox_.size();
         vPick.resize((unsigned int) num_boxes);
@@ -102,11 +102,11 @@ namespace Face {
             vScores.insert(std::pair<float, int>(boundingBox_[i].score, i));
         }
         while (!vScores.empty()) {
-            int last = vScores.rbegin()->second;
+            unsigned int last = vScores.rbegin()->second;
             vPick[nPick] = last;
             nPick += 1;
-            for (std::multimap<float, int>::iterator it = vScores.begin(); it != vScores.end();) {
-                int it_idx = it->second;
+            for (auto it = vScores.begin(); it != vScores.end();) {
+                auto it_idx = static_cast<unsigned int>(it->second);
                 maxX = (std::max)(boundingBox_.at(it_idx).x1, boundingBox_.at(last).x1);
                 maxY = (std::max)(boundingBox_.at(it_idx).y1, boundingBox_.at(last).y1);
                 minX = (std::min)(boundingBox_.at(it_idx).x2, boundingBox_.at(last).x2);
@@ -148,33 +148,33 @@ namespace Face {
         float bbw = 0, bbh = 0, maxSide = 0;
         float h = 0, w = 0;
         float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-        for (std::vector<Bbox>::iterator it = vecBbox.begin(); it != vecBbox.end(); it++) {
-            bbw = (*it).x2 - (*it).x1 + 1;
-            bbh = (*it).y2 - (*it).y1 + 1;
-            x1 = (*it).x1 + (*it).regreCoord[0] * bbw;
-            y1 = (*it).y1 + (*it).regreCoord[1] * bbh;
-            x2 = (*it).x2 + (*it).regreCoord[2] * bbw;
-            y2 = (*it).y2 + (*it).regreCoord[3] * bbh;
+        for (auto &it : vecBbox) {
+            bbw = it.x2 - it.x1 + 1;
+            bbh = it.y2 - it.y1 + 1;
+            x1 = it.x1 + it.regreCoord[0] * bbw;
+            y1 = it.y1 + it.regreCoord[1] * bbh;
+            x2 = it.x2 + it.regreCoord[2] * bbw;
+            y2 = it.y2 + it.regreCoord[3] * bbh;
 
             if (square) {
                 w = x2 - x1 + 1;
                 h = y2 - y1 + 1;
                 maxSide = (h > w) ? h : w;
-                x1 = x1 + w * 0.5 - maxSide * 0.5;
-                y1 = y1 + h * 0.5 - maxSide * 0.5;
-                (*it).x2 = round(x1 + maxSide - 1);
-                (*it).y2 = round(y1 + maxSide - 1);
-                (*it).x1 = round(x1);
-                (*it).y1 = round(y1);
+                x1 = static_cast<float>(x1 + w * 0.5 - maxSide * 0.5);
+                y1 = static_cast<float>(y1 + h * 0.5 - maxSide * 0.5);
+                it.x2 =  static_cast<int>(round(x1 + maxSide - 1));
+                it.y2 =  static_cast<int>(round(y1 + maxSide - 1));
+                it.x1 =  static_cast<int>(round(x1));
+                it.y1 =  static_cast<int>(round(y1));
             }
 
             //boundary check
-            if ((*it).x1 < 0)(*it).x1 = 0;
-            if ((*it).y1 < 0)(*it).y1 = 0;
-            if ((*it).x2 > width)(*it).x2 = width - 1;
-            if ((*it).y2 > height)(*it).y2 = height - 1;
+            if (it.x1 < 0)it.x1 = 0;
+            if (it.y1 < 0)it.y1 = 0;
+            if (it.x2 > width)it.x2 = width - 1;
+            if (it.y2 > height)it.y2 = height - 1;
 
-            it->area = (it->x2 - it->x1) * (it->y2 - it->y1);
+            it.area = (it.x2 - it.x1) * (it.y2 - it.y1);
         }
     }
 
@@ -190,9 +190,9 @@ namespace Face {
             minl *= factor;
             m = m * factor;
         }
-        for (size_t i = 0; i < scales_.size(); i++) {
-            int hs = (int) ceil(img_h * scales_[i]);
-            int ws = (int) ceil(img_w * scales_[i]);
+        for (float scale : scales_) {
+            int hs = (int) ceil(img_h * scale);
+            int ws = (int) ceil(img_w * scale);
             ncnn::Mat in;
             resize_bilinear(img, in, ws, hs);
             ncnn::Extractor ex = Pnet.create_extractor();
@@ -203,7 +203,7 @@ namespace Face {
             ex.extract("prob1", score_);
             ex.extract("conv4-2", location_);
             std::vector<Bbox> boundingBox_;
-            generateBbox(score_, location_, boundingBox_, scales_[i]);
+            generateBbox(score_, location_, boundingBox_, scale);
             nms(boundingBox_, nms_threshold[0]);
             firstBbox_.insert(firstBbox_.end(), boundingBox_.begin(), boundingBox_.end());
             boundingBox_.clear();
@@ -213,9 +213,9 @@ namespace Face {
     void Detect::RNet() {
         secondBbox_.clear();
         int count = 0;
-        for (std::vector<Bbox>::iterator it = firstBbox_.begin(); it != firstBbox_.end(); it++) {
+        for (auto &it : firstBbox_) {
             ncnn::Mat tempIm;
-            copy_cut_border(img, tempIm, (*it).y1, img_h - (*it).y2, (*it).x1, img_w - (*it).x2);
+            copy_cut_border(img, tempIm, it.y1, img_h - it.y2, it.x1, img_w - it.x2);
             ncnn::Mat in;
             resize_bilinear(tempIm, in, 24, 24);
             ncnn::Extractor ex = Rnet.create_extractor();
@@ -227,20 +227,20 @@ namespace Face {
             ex.extract("conv5-2", bbox);
             if ((float) score[1] > threshold[1]) {
                 for (int channel = 0; channel < 4; channel++) {
-                    it->regreCoord[channel] = (float) bbox[channel];//*(bbox.data+channel*bbox.cstep);
+                    it.regreCoord[channel] = (float) bbox[channel];//*(bbox.data+channel*bbox.cstep);
                 }
-                it->area = (it->x2 - it->x1) * (it->y2 - it->y1);
-                it->score = score.channel(1)[0];//*(score.data+score.cstep);
-                secondBbox_.push_back(*it);
+                it.area = (it.x2 - it.x1) * (it.y2 - it.y1);
+                it.score = score.channel(1)[0];//*(score.data+score.cstep);
+                secondBbox_.push_back(it);
             }
         }
     }
 
     void Detect::ONet() {
         thirdBbox_.clear();
-        for (std::vector<Bbox>::iterator it = secondBbox_.begin(); it != secondBbox_.end(); it++) {
+        for (auto &it : secondBbox_) {
             ncnn::Mat tempIm;
-            copy_cut_border(img, tempIm, (*it).y1, img_h - (*it).y2, (*it).x1, img_w - (*it).x2);
+            copy_cut_border(img, tempIm, it.y1, img_h - it.y2, it.x1, img_w - it.x2);
             ncnn::Mat in;
             resize_bilinear(tempIm, in, 48, 48);
             ncnn::Extractor ex = Onet.create_extractor();
@@ -253,16 +253,16 @@ namespace Face {
             ex.extract("conv6-3", keyPoint);
             if ((float) score[1] > threshold[2]) {
                 for (int channel = 0; channel < 4; channel++) {
-                    it->regreCoord[channel] = (float) bbox[channel];
+                    it.regreCoord[channel] = (float) bbox[channel];
                 }
-                it->area = (it->x2 - it->x1) * (it->y2 - it->y1);
-                it->score = score.channel(1)[0];
+                it.area = (it.x2 - it.x1) * (it.y2 - it.y1);
+                it.score = score.channel(1)[0];
                 for (int num = 0; num < 5; num++) {
-                    (it->ppoint)[num] = it->x1 + (it->x2 - it->x1) * keyPoint[num];
-                    (it->ppoint)[num + 5] = it->y1 + (it->y2 - it->y1) * keyPoint[num + 5];
+                    (it.ppoint)[num] = it.x1 + (it.x2 - it.x1) * keyPoint[num];
+                    (it.ppoint)[num + 5] = it.y1 + (it.y2 - it.y1) * keyPoint[num + 5];
                 }
 
-                thirdBbox_.push_back(*it);
+                thirdBbox_.push_back(it);
             }
         }
     }
@@ -275,7 +275,7 @@ namespace Face {
 
         PNet();
         //the first stage's nms
-        if (firstBbox_.size() < 1) return;
+        if (firstBbox_.empty()) return;
         nms(firstBbox_, nms_threshold[0]);
         refine(firstBbox_, img_h, img_w, true);
         //printf("firstBbox_.size()=%zd\n", firstBbox_.size());
@@ -283,14 +283,14 @@ namespace Face {
         //second stage
         RNet();
         //printf("secondBbox_.size()=%zd\n", secondBbox_.size());
-        if (secondBbox_.size() < 1) return;
+        if (secondBbox_.empty()) return;
         nms(secondBbox_, nms_threshold[1]);
         refine(secondBbox_, img_h, img_w, true);
 
         //third stage
         ONet();
         //printf("thirdBbox_.size()=%zd\n", thirdBbox_.size());
-        if (thirdBbox_.size() < 1) return;
+        if (thirdBbox_.empty()) return;
         refine(thirdBbox_, img_h, img_w, true);
         nms(thirdBbox_, nms_threshold[2], "Min");
         finalBbox_ = thirdBbox_;
@@ -302,9 +302,6 @@ namespace Face {
     }
 
     bool cmpScore(Bbox lsh, Bbox rsh) {
-        if (lsh.score < rsh.score)
-            return true;
-        else
-            return false;
+        return lsh.score < rsh.score;
     }
 }

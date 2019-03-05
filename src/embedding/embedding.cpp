@@ -48,7 +48,8 @@ int main(int argc, char **argv) {
     mDetect = new Face::Detect(tFaceModelDir);
     mRecognize = new Face::Recognize(tFaceModelDir);
 
-    float threshold[3] = {0.3f, 0.1f, 0.7f};
+    float threshold[3] = {0.2f, 0.1f, 0.8f};
+    mDetect->SetMinFace(40);
     mDetect->setThreshold(threshold);
     mDetect->SetThreadNum(detectThreadNum);
     mRecognize->SetThreadNum(recognizeThreadNum);
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
 
             vector<Face::Bbox> finalBbox;
             mDetect->SetMinFace(40);
-            mDetect->start(ncnn::Mat::from_pixels(mat.data, ncnn::Mat::PIXEL_BGR, mat.cols, mat.rows), finalBbox);
+            mDetect->start(ncnn::Mat::from_pixels(mat.data, ncnn::Mat::PIXEL_BGR2RGB, mat.cols, mat.rows), finalBbox);
             auto numFace = static_cast<int32_t>(finalBbox.size());
             if (numFace == 0) {
                 cerr << filename << " -- no face!" << endl;
@@ -89,7 +90,7 @@ int main(int argc, char **argv) {
             Mat dst_roi_dst;
             cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
 
-            ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR, dst_roi_dst.cols,
+            ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst_roi_dst.cols,
                                                           dst_roi_dst.rows);
             vector<float> feature;
             float embedding[128];

@@ -9,9 +9,11 @@ namespace Face {
     Recognize::Recognize(const std::string &model_path) {
         std::string param_files = model_path + "/recognition.param";
         std::string bin_files = model_path + "/recognition.bin";
+//        std::string param_files = model_path + "/test.param";
+//        std::string bin_files = model_path + "/test.bin";
 
-        //std::string param_files = model_path + "/mobilefacenet.param";
-        //std::string bin_files = model_path + "/mobilefacenet.bin";
+//        std::string param_files = model_path + "/mobilefacenet.param";
+//        std::string bin_files = model_path + "/mobilefacenet.bin";
         Recognet.load_param(param_files.c_str());
         Recognet.load_model(bin_files.c_str());
     }
