@@ -7,6 +7,7 @@
 #include "detect.h"
 #include "recognize.h"
 #include <opencv2/opencv.hpp>
+#include "FacePreprocess.h"
 
 using namespace cv;
 using namespace std;
@@ -38,7 +39,12 @@ int main(int argc, char **argv) {
     // list file
     listFiles(imgPath, &imgs);
 
-    int len = imgs.size();
+    int len = 0;
+    for (const auto &img : imgs)
+        if (endsWith(img.substr(imgPath.length() + 1, img.length()), ".jpg"))
+            len++;
+
+
     User *users = (User *) malloc(len * sizeof(User));
 
     int detectThreadNum = 3, recognizeThreadNum = 3;
@@ -87,8 +93,14 @@ int main(int argc, char **argv) {
             Rect rect(box.x1, box.y1, box.x2 - box.x1, box.y2 - box.y1);
             cv::Mat dst_roi = mat(rect);
 
+
+            Mat warp;
+            Point2f left(box.ppoint[0], box.ppoint[5]);
+            Point2f right(box.ppoint[1], box.ppoint[6]);
+            FacePreprocess::warpAffineFace(dst_roi, warp, left, right);
+
             Mat dst_roi_dst;
-            cv::resize(dst_roi, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+            cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
 
             ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst_roi_dst.cols,
                                                           dst_roi_dst.rows);
@@ -109,6 +121,8 @@ int main(int argc, char **argv) {
             outpath.append(filename);
             imwrite(outpath, dst_roi_dst);
 
+        } else {
+            index--;
         }
     }
 
@@ -121,7 +135,7 @@ int main(int argc, char **argv) {
     User *users2 = (User *) malloc(len * sizeof(User));
     int len2 = readUsers(filepath, users2);
 
-    cout << "-------------------------------" << endl;
+    cout << "-------------------------------" << len << "," << len2 << "-------------------------------" << endl;
     for (int i = 0; i < len2; i++) {
         cout << "name:" << users2[i].name << endl;
 

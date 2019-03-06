@@ -126,7 +126,7 @@ namespace Face {
             struct stat s{};
             string filename = (folderPath + "/" + entry->d_name);
             lstat(filename.c_str(), &s);
-            cout << filename << endl;
+//            cout << filename << endl;
             if (S_ISDIR(s.st_mode)) {
 
                 if (strcmp(".", entry->d_name) == 0 ||

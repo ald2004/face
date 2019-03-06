@@ -134,7 +134,7 @@ namespace Face {
         vPick.resize(nPick);
         std::vector<Bbox> tmp_;
         tmp_.resize(nPick);
-        for (int i = 0; i < nPick; i++) {
+        for (unsigned int i = 0; i < nPick; i++) {
             tmp_[i] = boundingBox_[vPick[i]];
         }
         boundingBox_ = tmp_;
@@ -162,10 +162,10 @@ namespace Face {
                 maxSide = (h > w) ? h : w;
                 x1 = static_cast<float>(x1 + w * 0.5 - maxSide * 0.5);
                 y1 = static_cast<float>(y1 + h * 0.5 - maxSide * 0.5);
-                it.x2 =  static_cast<int>(round(x1 + maxSide - 1));
-                it.y2 =  static_cast<int>(round(y1 + maxSide - 1));
-                it.x1 =  static_cast<int>(round(x1));
-                it.y1 =  static_cast<int>(round(y1));
+                it.x2 = static_cast<int>(round(x1 + maxSide - 1));
+                it.y2 = static_cast<int>(round(y1 + maxSide - 1));
+                it.x1 = static_cast<int>(round(x1));
+                it.y1 = static_cast<int>(round(y1));
             }
 
             //boundary check

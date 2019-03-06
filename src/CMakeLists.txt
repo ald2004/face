@@ -8,9 +8,9 @@ include_directories(
 link_directories(libs ${NCNN_DIR}/lib)
 
 # 项目cpp 文件
-file(GLOB PROJECT_CPP multivideoserver.cpp detect.cpp recognize.cpp file_util.cpp)
+file(GLOB PROJECT_CPP multivideoserver.cpp detect.cpp recognize.cpp file_util.cpp socket.cpp)
 # 创建可执行文件
-add_executable(face ${PROJECT_CPP})
+add_executable(face ${PROJECT_CPP} include/FacePreprocess.h)
 
 target_link_libraries(face
         ncnn

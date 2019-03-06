@@ -48,7 +48,7 @@ namespace Face {
     double calculCosSimilar(std::vector<float> &v1, std::vector<float> &v2) {
         if (v1.size() != v2.size() || v1.empty())
             return 0;
-        double ret = 0.0, mod1 = 0.0, mod2 = 0.0;
+        double ret = 0, mod1 = 0, mod2 = 0;
         for (std::vector<double>::size_type i = 0; i != v1.size(); ++i) {
             ret += v1[i] * v2[i];
             mod1 += v1[i] * v1[i];
@@ -60,7 +60,7 @@ namespace Face {
     double calculEuclidianDistance(std::vector<float> &v1, std::vector<float> &v2) {
         if (v1.size() != v2.size() || v1.empty())
             return 0;
-        double dist = 0.0;
+        double dist = 0;
         for (std::vector<double>::size_type i = 0; i != v1.size(); ++i) {
             double diff = v1[i] - v2[i];
             dist += diff * diff;

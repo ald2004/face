@@ -7,7 +7,7 @@ include_directories(
 )
 link_directories(../libs ${NCNN_DIR}/lib)
 # 项目cpp 文件
-file(GLOB PROJECT_CPP ../detect.cpp ../recognize.cpp ../file_util.cpp embedding.cpp)
+file(GLOB PROJECT_CPP ../detect.cpp ../recognize.cpp ../file_util.cpp ../socket.cpp embedding.cpp)
 # 创建可执行文件
 add_executable(embedding ${PROJECT_CPP})
 

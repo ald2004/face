@@ -61,7 +61,7 @@ namespace Face {
 
         float threshold[3] = {0.9f, 0.9f, 0.99f};
 //        float threshold[3] = {0.3f, 0.1f, 0.7f};
-        int minsize = 100;
+        int minsize = 60;
         const float pre_facetor = 0.709f;
         int threadnum = 1;
 
