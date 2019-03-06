@@ -114,7 +114,7 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
                 float faceHAngle = FacePreprocess::calcFaceHAngle(left, right, nose);
                 float faceScore = FacePreprocess::calcFaceScore(dst_roi_dst, left, right, nose);
 
-//                cout << "faceHAngle:" << faceHAngle << "¡ã" << endl;
+//                cout << "faceHAngle:" << faceHAngle << "Â°" << endl;
 //                cout << "faceScore:" << faceScore << endl;
 
                 vector<float> feature2;
@@ -141,7 +141,7 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
                     cout
                             << "name:" << maxName
                             << " similar:" << max
-                            << " faceHAngle:" << faceHAngle << "¡ã"
+                            << " faceHAngle:" << faceHAngle << ""
                             << " faceScore:" << faceScore
                             << " time:" << (end - start) << "ms"
                             << endl;
