@@ -11,10 +11,12 @@
 
 #include<windows.h>
 
-#define SLEEP(a) Sleep(a )
+#define SLEEP(a) Sleep(a)
+#define GET_CURR_TIME() clock()
 #else
 #include <unistd.h>
 #define SLEEP(a) usleep(a*1000)
+#define GET_CURR_TIME() clock()/1000
 #endif
 
 
@@ -27,53 +29,54 @@ static bool run = false;
 
 void send(face::Socket socket, const char *buf, int len) {
     socket.Send(buf, len);
+    SLEEP(20);
+}
+
+void openDoor(const face::Socket &sock) {
+    send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00", 20);
+    send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x80\xed\xff\xff\x00\x00\x01\x00", 16);
     SLEEP(100);
+    send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x02\x00", 16);
+    send(sock, "\x55\xaa\x02\x13\x01\x00\x00\x00\x5c\x00\x00\x00\x00\x04\x03\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x04\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\x81\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x05\x00", 16);
+    send(sock, "\x55\xaa\x02\xe1\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x06\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\xe0\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x07\x00", 16);
+    send(sock, "\x55\xaa\x02\x81\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x08\x00", 16);
 }
 
-void openDoor(const string &ip, unsigned short port) {
-    face::Socket sock;
-    sock.Connect(ip, port);
-    if (sock.IsConnected()) {
-        send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00", 20);
-        send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x80\xed\xff\xff\x00\x00\x01\x00", 16);
-        send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x02\x00", 16);
-        send(sock, "\x55\xaa\x02\x13\x01\x00\x00\x00\x5c\x00\x00\x00\x00\x04\x03\x00", 16);
-        send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x04\x00", 16);
-        send(sock, "\x55\xaa\x02\x81\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x05\x00", 16);
-        send(sock, "\x55\xaa\x02\xe1\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x06\x00", 16);
-        send(sock, "\x55\xaa\x02\xe0\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x07\x00", 16);
-        send(sock, "\x55\xaa\x02\x81\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x08\x00", 16);
-        sock.Close();
-    } else {
-        cerr << "connected is false [" << ip << ":" << port << "]" << endl;
-    }
-}
-
-void closeDoor(const string &ip, unsigned short port) {
-    face::Socket sock;
-    sock.Connect(ip, port);
-    if (sock.IsConnected()) {
-        send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00", 20);
-        send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x80\xed\xff\xff\x00\x00\x01\x00", 16);
-        send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x02\x00", 16);
-        send(sock, "\x55\xaa\x02\x13\x01\x00\x00\x00\x2a\x5e\x00\x00\x00\x04\x03\x00", 16);
-        send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x04\x00", 16);
-        send(sock, "\x55\xaa\x02\x81\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x05\x00", 16);
-        send(sock, "\x55\xaa\x02\xe1\x02\x00\x00\x00\x00\x00\xff\xff\x00\x00\x06\x00", 16);
-        send(sock, "\x55\xaa\x02\xe0\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x07\x00", 16);
-        send(sock, "\x55\xaa\x02\x81\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x08\x00", 16);
-        sock.Close();
-    } else {
-        cerr << "connected is false [" << ip << ":" << port << "]" << endl;
-    }
+void closeDoor(const face::Socket &sock) {
+    send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00", 20);
+    send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x80\xed\xff\xff\x00\x00\x01\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x02\x00", 16);
+    send(sock, "\x55\xaa\x02\x13\x01\x00\x00\x00\x2a\x5e\x00\x00\x00\x04\x03\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\x13\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\x04\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\x81\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x05\x00", 16);
+    send(sock, "\x55\xaa\x02\xe1\x02\x00\x00\x00\x00\x00\xff\xff\x00\x00\x06\x00", 16);
+    SLEEP(100);
+    send(sock, "\x55\xaa\x02\xe0\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x07\x00", 16);
+    send(sock, "\x55\xaa\x02\x81\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x08\x00", 16);
 }
 
 void doorOpenAndClose(const string &ip, unsigned short port, int waitTime) {
     if (!run) {
         run = true;
-        openDoor(ip, port);
-        SLEEP(waitTime);
-        closeDoor(ip, port);
+        face::Socket sock;
+        sock.Connect(ip, port);
+        if (sock.IsConnected()) {
+            openDoor(sock);
+            SLEEP(waitTime);
+            closeDoor(sock);
+        } else {
+            cerr << "connected is false [" << ip << ":" << port << "]" << endl;
+        }
+        sock.Close();
         run = false;
     }
 }
@@ -88,10 +91,12 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
         }
         try {
 
-            int64 start = clock();
+            int64 start = GET_CURR_TIME();
             vector<Face::Bbox> box;
             mDetect->start(ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst.cols, dst.rows), box);
             auto num_face = static_cast<int32_t>(box.size());
+            int64 end = GET_CURR_TIME();
+            cout << "mtcnn:" << (end - start) << "ms" << endl;
 
             for (int i = 0; i < num_face; i++) {
 
@@ -116,12 +121,13 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
 
 //                cout << "faceHAngle:" << faceHAngle << "°" << endl;
 //                cout << "faceScore:" << faceScore << endl;
-
+                start = GET_CURR_TIME();
                 vector<float> feature2;
                 mRecognize->start(resize_mat_sub, feature2);
+                end = GET_CURR_TIME();
 //                imshow("1", dst_roi_dst);
 //            cout << Face::calculEuclidianDistance(feature1, feature2) << endl;
-                int64 end = clock();
+
 
                 string maxName;
                 double max = -10;
@@ -147,7 +153,6 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
                             << endl;
                     thread t(doorOpenAndClose, ip, port, waitTime);
                     t.detach();
-//                imshow("2", imread(imgPath + "/" + maxName + ".jpg"));
                 }
                 rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
             }
@@ -187,6 +192,14 @@ int main(int argc, char **argv) {
     int waitTime;
     isWaitTime >> waitTime;
 
+    const string s_thread = argv[8];
+    istringstream isThreadNum(s_thread);
+    int threadNum;
+    isThreadNum >> threadNum;
+
+//    doorOpenAndClose(ip, port, waitTime);
+//    return 0;
+
 //    string video = "rtsp://admin:111111ab@192.168.100.251:554/h264/ch1/main/1";
     cout << "runPath:" << runPath << endl;
     cout << "imgPath:" << imgPath << endl;
@@ -219,7 +232,7 @@ int main(int argc, char **argv) {
         cout << endl;
     }
 
-    int detectThreadNum = 3, recognizeThreadNum = 3;
+    int detectThreadNum = threadNum, recognizeThreadNum = threadNum;
     Face::Detect *mDetect;
     Face::Recognize *mRecognize;
     mDetect = new Face::Detect(tFaceModelDir);
@@ -238,6 +251,7 @@ int main(int argc, char **argv) {
         cout << "Failure to turn on video capture ." << endl;
         return -1;
     }
+
     Mat frame;
     bool first = true;
     bool stop = false;
@@ -248,6 +262,8 @@ int main(int argc, char **argv) {
             cap->open(video);
             continue;
         }
+
+
 //        dst = frame;
         frame.copyTo(dst);
 //        cv::resize(frame, dst, cv::Size(640, 360), 0, 0, cv::INTER_CUBIC);

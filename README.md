@@ -16,6 +16,7 @@ mkdir build
 cd build
 cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release ^
     -DCMAKE_INSTALL_PREFIX=./install ^
-    -DOPENCV_DIR=D:/projects/cpp/opencv-3.4.3/build_nmake/install ^
+    -DOpenCV_DIR=D:/projects/cpp/opencv-3.4.3/build_nmake/install ^
     -DNCNN_DIR=D:/ncnn/build-win32/install  ..
 ```
+* 注意OpenCV_DIR 大小写。 目标路径 包含 OpenCVConfig.cmake 文件。

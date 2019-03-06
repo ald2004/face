@@ -73,7 +73,7 @@ install(TARGETS
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
 
-install(DIRECTORY model DESTINATION .
+install(DIRECTORY model DESTINATION ''
         PATTERN "*.bin|*.param"
         PERMISSIONS OWNER_READ GROUP_READ
         )
