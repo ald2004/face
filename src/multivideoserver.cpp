@@ -96,7 +96,7 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
             mDetect->start(ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst.cols, dst.rows), box);
             auto num_face = static_cast<int32_t>(box.size());
             int64 end = GET_CURR_TIME();
-            cout << "mtcnn:" << (end - start) << "ms" << endl;
+//            cout << "mtcnn:" << (end - start) << "ms" << endl;
 
             for (int i = 0; i < num_face; i++) {
 
@@ -274,7 +274,6 @@ int main(int argc, char **argv) {
             t.detach();
             first = false;
         }
-
 
         /* imshow("", dst);
 
