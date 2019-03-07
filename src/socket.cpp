@@ -163,7 +163,7 @@ namespace face {
 
         char szIP[64];
 #ifdef WIN32
-        printf(szIP, "%u.%u.%u.%u", addr.sin_addr.S_un.S_addr & 0xFF, (addr.sin_addr.S_un.S_addr >> 8) & 0xFF,
+        sprintf(szIP, "%u.%u.%u.%u", addr.sin_addr.S_un.S_addr & 0xFF, (addr.sin_addr.S_un.S_addr >> 8) & 0xFF,
                (addr.sin_addr.S_un.S_addr >> 16) & 0xFF, (addr.sin_addr.S_un.S_addr >> 24) & 0xFF);
 #else
         sprintf(szIP, "%u.%u.%u.%u", addr.sin_addr.s_addr & 0xFF, (addr.sin_addr.s_addr >> 8) & 0xFF, (addr.sin_addr.s_addr >> 16) & 0xFF, (addr.sin_addr.s_addr >> 24) & 0xFF);

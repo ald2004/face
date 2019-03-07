@@ -80,14 +80,27 @@ namespace FacePreprocess {
         return leftA;
     }
 
+    float calcFaceDefinition(const Mat &src) {
+        Mat imageGrey;
+        cvtColor(src, imageGrey, CV_RGB2GRAY);
+        Mat imageSobel;
+        Sobel(imageGrey, imageSobel, CV_16U, 1, 1);
+        double meanValue = mean(imageSobel)[0];
+        return static_cast<float>(meanValue);
+    }
+
     float calcFaceScore(Mat &src, const Point2f &left, const Point2d &right, const Point2d &nose) {
         float faceHAngle = calcFaceHAngle(left, right, nose);
         float angle = static_cast<float>((std::max)(calcRotationAngle(left, right) / 90.0, 0.0));
         float angleScore = static_cast<float>((std::max)(abs(faceHAngle) / 90.0, 0.0));
+        //  1-(math.tanh(4-2)+1)/2  Definition [0-4] 0.1-0.98
+        float definition = 1 - (tanh(calcFaceDefinition(src) - 2) + 1) / 2;
+
 
         float score = 1;
-        score -= angleScore * 0.5f;
-        score -= angle * 0.2f;
+        score -= angleScore * 0.4f;
+        score -= angle * 0.1f;
+        score -= definition * 0.7f;
         return score;
     }
 

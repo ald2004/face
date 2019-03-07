@@ -19,11 +19,9 @@
 #define GET_CURR_TIME() clock()/1000
 #endif
 
-
 using namespace cv;
 using namespace Face;
 using namespace std;
-
 static Mat dst;
 static bool run = false;
 
@@ -81,8 +79,15 @@ void doorOpenAndClose(const string &ip, unsigned short port, int waitTime) {
     }
 }
 
-void
-recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int len, string ip, int port, int waitTime) {
+void recognize(Face::Detect
+               *mDetect,
+               Face::Recognize *mRecognize, User
+               *users,
+               int len, string
+               ip,
+               int port,
+               int waitTime
+) {
 
     while (true) {
 
@@ -123,16 +128,18 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
 //                cout << "faceScore:" << faceScore << endl;
                 start = GET_CURR_TIME();
                 vector<float> feature2;
-                mRecognize->start(resize_mat_sub, feature2);
+                mRecognize->
+                        start(resize_mat_sub, feature2
+                );
                 end = GET_CURR_TIME();
 //                imshow("1", dst_roi_dst);
+//                waitKey(1);
 //            cout << Face::calculEuclidianDistance(feature1, feature2) << endl;
 
 
                 string maxName;
                 double max = -10;
                 for (int j = 0; j < len; j++) {
-
                     vector<float> feature(users[j].embedding, users[j].embedding + 128);
                     double similar = Face::calculCosSimilar(feature, feature2);
 
@@ -143,18 +150,61 @@ recognize(Face::Detect *mDetect, Face::Recognize *mRecognize, User *users, int l
 
                 }
 
+                time_t timep;
+                time(&timep);
+                char tmp[64];
+                char tmp2[13];
+                strftime(tmp, sizeof(tmp), "%H%M%S", localtime(&timep));
+                strftime(tmp2, sizeof(tmp2), "%Y%m%d", localtime(&timep));
+
+                string outFileName;
+                outFileName.append(maxName);
+                outFileName.append("-");
+                outFileName.append(to_string(max));
+                outFileName.append("-");
+                outFileName.append(to_string(faceScore));
+                outFileName.append("-");
+                outFileName.append(tmp);
+                outFileName.append(".jpg");
+
                 if (max > 0.55) {
-                    cout
-                            << "name:" << maxName
-                            << " similar:" << max
-                            << " faceHAngle:" << faceHAngle << ""
-                            << " faceScore:" << faceScore
-                            << " time:" << (end - start) << "ms"
-                            << endl;
-                    thread t(doorOpenAndClose, ip, port, waitTime);
-                    t.detach();
+                    cout << "name:" << maxName
+                         << " similar:" << max
+                         << " faceHAngle:" << faceHAngle << ""
+                         << " faceScore:" << faceScore
+                         << " time:" << (end - start) << "ms"
+                         <<
+                         endl;
+                    if (faceScore > 0.8) {
+                        if (!run) {
+                            thread t(doorOpenAndClose, ip, port, waitTime);
+                            t.detach();
+                            string dir;
+                            dir.append("./confirmed/");
+                            dir.append(tmp2);
+                            dir.append("/");
+                            Face::createDir("./confirmed/");
+                            Face::createDir(dir.c_str());
+                            string outpath;
+                            outpath.append(dir);
+                            outpath.append(outFileName);
+                            imwrite(outpath, dst_roi_dst);
+                        }
+                    }
+                } else if (max < 0.4 && faceScore > 0.9) {
+                    string dir;
+                    dir.append("./stranger/");
+                    dir.append(tmp2);
+                    dir.append("/");
+                    Face::createDir("./stranger/");
+                    Face::createDir(dir.c_str());
+                    string outpath;
+                    outpath.append(dir);
+                    outpath.append(outFileName);
+                    imwrite(outpath, dst_roi_dst);
                 }
-                rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
+//                rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
+
             }
         } catch (int x) {
 
@@ -169,7 +219,6 @@ int main(int argc, char **argv) {
 //    string ip = "172.168.3.173";
 //    unsigned short port = 5005;
 
-
     // run  xxx/xxx.exe
     const string runPath = argv[0];
     // imgs
@@ -180,6 +229,7 @@ int main(int argc, char **argv) {
     const string embeddingPath = argv[3];
 
     const string video = argv[4];
+//    const int video = 0;
     const string ip = argv[5];
 
     const string s_port = argv[6];
@@ -206,7 +256,8 @@ int main(int argc, char **argv) {
     cout << "tFaceModelDir:" << tFaceModelDir << endl;
     cout << "embeddingPath:" << embeddingPath << endl;
 
-    string tmp = (embeddingPath + "/embedding.dat");// ubuntu tmp var clear
+    string
+            tmp = (embeddingPath + "/embedding.dat");// ubuntu tmp var clear
     const char *fpath = tmp.c_str();
 
     long fileLength = getFileLength(fpath);
@@ -263,7 +314,6 @@ int main(int argc, char **argv) {
             continue;
         }
 
-
 //        dst = frame;
         frame.copyTo(dst);
 //        cv::resize(frame, dst, cv::Size(640, 360), 0, 0, cv::INTER_CUBIC);
@@ -274,9 +324,7 @@ int main(int argc, char **argv) {
             t.detach();
             first = false;
         }
-
         /* imshow("", dst);
-
          if ((cv::waitKey(2) & 0xEFFFFF) == 27)//esc
              stop = true;*/
 
