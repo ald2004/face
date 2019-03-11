@@ -18,6 +18,7 @@ check_env(NCNN_DIR)
 option(OPEN_OPENMP "OpenMP ON" ON)
 option(BUILD_FACE "BUILD_FACE" ON)
 option(BUILD_EMBEDDING "BUILD_EMBEDDING" ON)
+option(BUILD_TEST "BUILD_TEST" ON)
 
 # Find OpenCV, you may need to set OpenCV_DIR variable
 # to the absolute path to the directory containing OpenCVConfig.cmake file
@@ -64,6 +65,16 @@ else ()
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 
+IF (WIN32)
+    MESSAGE(STATUS "Now is windows")
+    add_compile_options("/source-charset:utf-8")
+ELSEIF (APPLE)
+    MESSAGE(STATUS "Now is Apple systens.")
+ELSEIF (UNIX)
+    MESSAGE(STATUS "Now is UNIX-like OS's. Including aPPLE os x  and CygWin")
+ENDIF ()
+
+
 if (NOT DEFINED CMAKE_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")
 endif ()
@@ -73,5 +84,8 @@ if (BUILD_FACE)
 endif ()
 if (BUILD_EMBEDDING)
     add_subdirectory(src/embedding)
+endif ()
+if (BUILD_TEST)
+    add_subdirectory(src/test)
 endif ()
 
