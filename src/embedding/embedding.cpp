@@ -23,6 +23,8 @@ int endsWith(const string &s, const string &sub) {
 
 
 int main(int argc, char **argv) {
+    std::vector<int> IMWRITE_PARAMS = {CV_IMWRITE_JPEG_QUALITY, 100};
+
     // run  xxx/xxx.exe
     const string runPath = argv[0];
     // imgs
@@ -119,7 +121,7 @@ int main(int argc, char **argv) {
             outpath.append(imgPath);
             outpath.append("/output/");
             outpath.append(filename);
-            imwrite(outpath, dst_roi_dst);
+            imwrite(outpath, dst_roi_dst, IMWRITE_PARAMS);
 
         } else {
             index--;

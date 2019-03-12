@@ -22,12 +22,13 @@
 using namespace cv;
 using namespace Face;
 using namespace std;
+static std::vector<int> IMWRITE_PARAMS = {CV_IMWRITE_JPEG_QUALITY, 100};
 static Mat dst;
 static bool run = false;
 
 void send(face::Socket socket, const char *buf, int len) {
     socket.Send(buf, len);
-    SLEEP(20);
+    SLEEP(40);
 }
 
 void openDoor(const face::Socket &sock) {
@@ -96,6 +97,14 @@ void recognize(Face::Detect
         }
         try {
 
+
+            time_t timep;
+            time(&timep);
+            char tmp[64];
+            char tmp2[13];
+            strftime(tmp, sizeof(tmp), "%H%M%S", localtime(&timep));
+            strftime(tmp2, sizeof(tmp2), "%Y%m%d", localtime(&timep));
+
             int64 start = GET_CURR_TIME();
             vector<Face::Bbox> box;
             mDetect->start(ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst.cols, dst.rows), box);
@@ -113,6 +122,8 @@ void recognize(Face::Detect
                 Point2f right(box[i].ppoint[1], box[i].ppoint[6]);
                 Point2f nose(box[i].ppoint[2], box[i].ppoint[7]);
                 FacePreprocess::warpAffineFace(dst_roi, warp, left, right);
+                int faceWidth = dst_roi.cols;
+                int faceHeight = dst_roi.rows;
 
                 Mat dst_roi_dst;
                 cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
@@ -150,12 +161,7 @@ void recognize(Face::Detect
 
                 }
 
-                time_t timep;
-                time(&timep);
-                char tmp[64];
-                char tmp2[13];
-                strftime(tmp, sizeof(tmp), "%H%M%S", localtime(&timep));
-                strftime(tmp2, sizeof(tmp2), "%Y%m%d", localtime(&timep));
+//                faceScore += ((faceWidth - 150) / 200.f) * 0.1;
 
                 string outFileName;
                 outFileName.append(maxName);
@@ -165,6 +171,10 @@ void recognize(Face::Detect
                 outFileName.append(to_string(faceScore));
                 outFileName.append("-");
                 outFileName.append(tmp);
+                outFileName.append("-");
+                outFileName.append(to_string(faceWidth));
+                outFileName.append("-");
+                outFileName.append(to_string(faceHeight));
                 outFileName.append(".jpg");
 
                 if (max > 0.55) {
@@ -177,8 +187,8 @@ void recognize(Face::Detect
                          endl;
                     if (faceScore > 0.8) {
                         if (!run) {
-                            thread t(doorOpenAndClose, ip, port, waitTime);
-                            t.detach();
+                            thread thread1(doorOpenAndClose, ip, port, waitTime);
+                            thread1.detach();
                             string dir;
                             dir.append("./confirmed/");
                             dir.append(tmp2);
@@ -188,10 +198,11 @@ void recognize(Face::Detect
                             string outpath;
                             outpath.append(dir);
                             outpath.append(outFileName);
-                            imwrite(outpath, dst_roi_dst);
+                            imwrite(outpath, dst_roi_dst, IMWRITE_PARAMS);
                         }
+
                     }
-                } else if (max < 0.4 && faceScore > 0.9) {
+                } else if (max < 0.4 && faceScore > 0.9 && faceWidth > 120) {
                     string dir;
                     dir.append("./stranger/");
                     dir.append(tmp2);
@@ -201,11 +212,12 @@ void recognize(Face::Detect
                     string outpath;
                     outpath.append(dir);
                     outpath.append(outFileName);
-                    imwrite(outpath, dst_roi_dst);
+                    imwrite(outpath, dst_roi_dst, IMWRITE_PARAMS);
                 }
 //                rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
 
             }
+
         } catch (int x) {
 
         }
@@ -228,8 +240,8 @@ int main(int argc, char **argv) {
     // embeddingPath
     const string embeddingPath = argv[3];
 
-    const string video = argv[4];
-//    const int video = 0;
+//    const string video = argv[4];
+    const int video = 0;
     const string ip = argv[5];
 
     const string s_port = argv[6];
@@ -256,8 +268,7 @@ int main(int argc, char **argv) {
     cout << "tFaceModelDir:" << tFaceModelDir << endl;
     cout << "embeddingPath:" << embeddingPath << endl;
 
-    string
-            tmp = (embeddingPath + "/embedding.dat");// ubuntu tmp var clear
+    string tmp = (embeddingPath + "/embedding.dat");// ubuntu tmp var clear
     const char *fpath = tmp.c_str();
 
     long fileLength = getFileLength(fpath);
