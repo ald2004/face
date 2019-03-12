@@ -36,7 +36,10 @@ namespace Face {
         ex.extract("fc1", out);
         ncnn::Mat test;
         for (int j = 0; j < 128; j++) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconversion"
             feature_out[j] = out[j];
+#pragma clang diagnostic pop
         }
     }
 
