@@ -15,8 +15,32 @@
 namespace FacePreprocess {
     using namespace cv;
 
-    void rotate(Mat &src, Mat &dst, float angle) {
+    Point2f calcRotationPoint(Point2f point, Mat affine_matrix) {
+        int x = static_cast<int>(affine_matrix.ptr<double>(0)[0] * (point.x) +
+                                 affine_matrix.ptr<double>(0)[1] * (point.y) +
+                                 affine_matrix.ptr<double>(0)[2]);
+        int y = static_cast<int>(affine_matrix.ptr<double>(1)[0] * (point.x) +
+                                 affine_matrix.ptr<double>(1)[1] * (point.y) +
+                                 affine_matrix.ptr<double>(1)[2]);
+        return Point2f(x, y);
+    }
+
+    Point2f calcRotationPoint(Point2f point, Point2f center, float angle) {
+        //       (rx0,ry0)
+        //       x0= (x - rx0)*cos(a) - (y - ry0)*sin(a) + rx0 ;
+        //       y0= (x - rx0)*sin(a) + (y - ry0)*cos(a) + ry0 ;
         auto radian = (float) (angle / 180.0 * CV_PI);
+        return Point2f(
+                ((center.x - point.x) * cos(radian)) - ((center.y - point.y) * sin(radian)) + center.x,
+                ((center.x - point.x) * sin(radian)) - ((center.y - point.y) * cos(radian)) + center.y
+        );
+    }
+
+    Point2f calcRotationPoint(const Point2f &point, float angle) {
+        return calcRotationPoint(point, Point2f(0, 0), angle);
+    }
+
+    void rotateAndCut(Mat &src, Mat &dst, Rect faceBox, float angle) {
 
         // full
         int maxBorder = (int) (max(src.cols, src.rows) * 1.414); // sqrt(2)*max
@@ -24,6 +48,37 @@ namespace FacePreprocess {
         int dy = (maxBorder - src.rows) / 2;
         copyMakeBorder(src, dst, dy, dy, dx, dx, BORDER_CONSTANT);
 
+        //rotate
+        Point2f center(dst.cols / 2.f, dst.rows / 2.f);
+
+        Mat affine_matrix = getRotationMatrix2D(center, angle, 1.0);
+        warpAffine(dst, dst, affine_matrix, dst.size());
+
+        Point2f leftTop = calcRotationPoint(Point2f(faceBox.x + dx, faceBox.y + dy), affine_matrix);
+        Point2f leftBottom = calcRotationPoint(Point2f(faceBox.x + dx, faceBox.y + dy + faceBox.height), affine_matrix);
+        Point2f rightTop = calcRotationPoint(Point2f(faceBox.x + dx + faceBox.width, faceBox.y + dy), affine_matrix);
+        Point2f rightBottom = calcRotationPoint(
+                Point2f(faceBox.x + dx + faceBox.width, faceBox.y + dy + faceBox.height), affine_matrix);
+
+
+        int x = (int) (std::min)(leftTop.x, leftBottom.x);
+        int y = (int) (std::min)(leftTop.y, rightTop.y);
+        int w = static_cast<int>((std::max)(rightTop.x, rightBottom.x) - x);
+        int h = static_cast<int>((std::max)(leftBottom.y, rightBottom.y) - y);
+        int maxWH = (std::max)(w, h);
+
+        dst = Mat(dst, Rect(x, y, maxWH, maxWH));
+
+    }
+
+    void rotate(Mat &src, Mat &dst, float angle, bool isCut = true) {
+        auto radian = (float) (angle / 180.0 * CV_PI);
+
+        // full
+        int maxBorder = (int) (max(src.cols, src.rows) * 1.414); // sqrt(2)*max
+        int dx = (maxBorder - src.cols) / 2;
+        int dy = (maxBorder - src.rows) / 2;
+        copyMakeBorder(src, dst, dy, dy, dx, dx, BORDER_CONSTANT);
         //rotate
         Point2f center(dst.cols / 2.f, dst.rows / 2.f);
         Mat affine_matrix = getRotationMatrix2D(center, angle, 1.0);
@@ -37,7 +92,7 @@ namespace FacePreprocess {
         int y = (dst.rows - targetSize.height) / 2;
         Rect rect(x, y, targetSize.width, targetSize.height);
 
-        if ((dst.rows > x + targetSize.width || dst.cols > y + targetSize.height)) {
+        if (isCut && (dst.rows > x + targetSize.width || dst.cols > y + targetSize.height)) {
             dst = Mat(dst, rect);
         }
     }
@@ -47,17 +102,6 @@ namespace FacePreprocess {
         double dx = (right.x - left.x);
         double angle = atan2(dy, dx) * 180.0 / CV_PI; // Convert from radians to degrees.
         return static_cast<float>(angle);
-    }
-
-    Point2f calcRotationPoint(Point2f point, float angle) {
-        //       (rx0,ry0)
-        //       x0= (x - rx0)*cos(a) - (y - ry0)*sin(a) + rx0 ;
-        //       y0= (x - rx0)*sin(a) + (y - ry0)*cos(a) + ry0 ;
-        auto radian = (float) (angle / 180.0 * CV_PI);
-        return Point2f(
-                (point.x * cos(radian)) - (point.y * sin(radian)),
-                (point.x * sin(radian)) - (point.y * cos(radian))
-        );
     }
 
 
