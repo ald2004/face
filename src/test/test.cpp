@@ -8,11 +8,11 @@
 #include <opencv2/opencv.hpp>
 
 #include "ldmarkmodel.h"
+#include <FacePreprocess.h>
 
 #ifdef _WIN32
 
 #include<windows.h>
-#include <FacePreprocess.h>
 
 #define SLEEP(a) Sleep(a)
 #define GET_CURR_TIME() clock()
