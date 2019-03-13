@@ -34,7 +34,28 @@ namespace Face {
 
         void start(const ncnn::Mat &img, std::vector<Bbox> &finalBbox);
 
+        void start2(const ncnn::Mat &ncnn_img,
+                    std::vector<Bbox> &finalBbox1_,
+                    std::vector<Bbox> &finalBbox2_,
+                    std::vector<Bbox> &finalBbox3_);
+
         void setThreshold(float threshold[3]);
+
+        std::vector<Bbox> PNet(ncnn::Mat &img);
+
+        /**
+         *
+         * @param in 24*24
+         * @return
+         */
+        std::vector<Bbox> RNet(ncnn::Mat &in);
+
+        /**
+             *
+             * @param in 48*48
+             * @return
+             */
+        std::vector<Bbox> ONet(ncnn::Mat &in);
 
     private:
         void generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox> &boundingBox_, float scale);
@@ -48,6 +69,7 @@ namespace Face {
         void RNet();
 
         void ONet();
+
 
         ncnn::Net Pnet, Rnet, Onet;
         ncnn::Mat img;

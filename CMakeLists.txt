@@ -64,16 +64,21 @@ else ()
     MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
-
+# file encoding utf-8
 IF (WIN32)
     MESSAGE(STATUS "Now is windows")
     add_compile_options("/source-charset:utf-8")
 ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systens.")
+#    add_compile_options(-std=c++11)
+    add_compile_options("-finput-charset=utf-8")
+    add_compile_options("-fexec-charset=utf-8")
 ELSEIF (UNIX)
     MESSAGE(STATUS "Now is UNIX-like OS's. Including aPPLE os x  and CygWin")
+#    SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")
+    add_compile_options("-finput-charset=utf-8")
+    add_compile_options("-fexec-charset=utf-8")
 ENDIF ()
-
 
 if (NOT DEFINED CMAKE_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation Directory")

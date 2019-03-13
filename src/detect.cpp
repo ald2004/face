@@ -210,6 +210,42 @@ namespace Face {
         }
     }
 
+    std::vector<Bbox> Detect::PNet(ncnn::Mat &img) {
+        std::vector<Bbox> boxes;
+        int img_w = img.w;
+        int img_h = img.h;
+        float minl = img_w < img_h ? img_w : img_h;
+        float m = (float) MIN_DET_SIZE / minsize;
+        minl *= m;
+        float factor = pre_facetor;
+        std::vector<float> scales_;
+        while (minl > MIN_DET_SIZE) {
+            scales_.push_back(m);
+            minl *= factor;
+            m = m * factor;
+        }
+        for (float scale : scales_) {
+            int hs = (int) ceil(img_h * scale);
+            int ws = (int) ceil(img_w * scale);
+            ncnn::Mat in;
+            resize_bilinear(img, in, ws, hs);
+            ncnn::Extractor ex = Pnet.create_extractor();
+            ex.set_num_threads(threadnum);
+            ex.set_light_mode(true);
+            ex.input("data", in);
+            ncnn::Mat score_, location_;
+            ex.extract("prob1", score_);
+            ex.extract("conv4-2", location_);
+            std::vector<Bbox> boundingBox_;
+            generateBbox(score_, location_, boundingBox_, scale);
+            nms(boundingBox_, nms_threshold[0]);
+            boxes.insert(boxes.end(), boundingBox_.begin(), boundingBox_.end());
+            boundingBox_.clear();
+        }
+        return boxes;
+    }
+
+
     void Detect::RNet() {
         secondBbox_.clear();
         int count = 0;
@@ -217,6 +253,7 @@ namespace Face {
             ncnn::Mat tempIm;
             copy_cut_border(img, tempIm, it.y1, img_h - it.y2, it.x1, img_w - it.x2);
             ncnn::Mat in;
+//            std::cout << tempIm.w << "," << tempIm.h << std::endl;
             resize_bilinear(tempIm, in, 24, 24);
             ncnn::Extractor ex = Rnet.create_extractor();
             ex.set_num_threads(threadnum);
@@ -225,6 +262,7 @@ namespace Face {
             ncnn::Mat score, bbox;
             ex.extract("prob1", score);
             ex.extract("conv5-2", bbox);
+
             if ((float) score[1] > threshold[1]) {
                 for (int channel = 0; channel < 4; channel++) {
                     it.regreCoord[channel] = (float) bbox[channel];//*(bbox.data+channel*bbox.cstep);
@@ -234,6 +272,34 @@ namespace Face {
                 secondBbox_.push_back(it);
             }
         }
+    }
+
+    /**
+     *
+     * @param in 24*24
+     * @return
+     */
+    std::vector<Bbox> Detect::RNet(ncnn::Mat &in) {
+        std::vector<Bbox> boxes;
+        int count = 0;
+        ncnn::Extractor ex = Rnet.create_extractor();
+        ex.set_num_threads(threadnum);
+        ex.set_light_mode(true);
+        ex.input("data", in);
+        ncnn::Mat score, bbox;
+        ex.extract("prob1", score);
+        ex.extract("conv5-2", bbox);
+
+        if ((float) score[1] > threshold[1]) {
+            Bbox it{};
+            for (int channel = 0; channel < 4; channel++) {
+                it.regreCoord[channel] = (float) bbox[channel];//*(bbox.data+channel*bbox.cstep);
+            }
+            it.area = (it.x2 - it.x1) * (it.y2 - it.y1);
+            it.score = score.channel(1)[0];//*(score.data+score.cstep);
+            boxes.push_back(it);
+        }
+        return boxes;
     }
 
     void Detect::ONet() {
@@ -267,6 +333,41 @@ namespace Face {
         }
     }
 
+    /**
+     *
+     * @param in 48 * 48
+     * @return
+     */
+    std::vector<Bbox> Detect::ONet(ncnn::Mat &in) {
+        std::vector<Bbox> boxes;
+
+        ncnn::Extractor ex = Onet.create_extractor();
+        ex.set_num_threads(threadnum);
+        ex.set_light_mode(true);
+        ex.input("data", in);
+        ncnn::Mat score, bbox, keyPoint;
+        ex.extract("prob1", score);
+        ex.extract("conv6-2", bbox);
+        ex.extract("conv6-3", keyPoint);
+        if ((float) score[1] > threshold[2]) {
+            Bbox it{};
+            for (int channel = 0; channel < 4; channel++) {
+                it.regreCoord[channel] = (float) bbox[channel];
+            }
+            it.area = (it.x2 - it.x1) * (it.y2 - it.y1);
+            it.score = score.channel(1)[0];
+            for (int num = 0; num < 5; num++) {
+                (it.ppoint)[num] = it.x1 + (it.x2 - it.x1) * keyPoint[num];
+                (it.ppoint)[num + 5] = it.y1 + (it.y2 - it.y1) * keyPoint[num + 5];
+            }
+
+            boxes.push_back(it);
+        }
+
+        return boxes;
+    }
+
+
     void Detect::start(const ncnn::Mat &ncnn_img, std::vector<Bbox> &finalBbox_) {
         img = ncnn_img;
         img_w = img.w;
@@ -278,22 +379,56 @@ namespace Face {
         if (firstBbox_.empty()) return;
         nms(firstBbox_, nms_threshold[0]);
         refine(firstBbox_, img_h, img_w, true);
-        //printf("firstBbox_.size()=%zd\n", firstBbox_.size());
+//        printf("firstBbox_.size()=%zd\n", firstBbox_.size());
 
         //second stage
         RNet();
-        //printf("secondBbox_.size()=%zd\n", secondBbox_.size());
+//        printf("secondBbox_.size()=%zd\n", secondBbox_.size());
         if (secondBbox_.empty()) return;
         nms(secondBbox_, nms_threshold[1]);
         refine(secondBbox_, img_h, img_w, true);
 
         //third stage
         ONet();
-        //printf("thirdBbox_.size()=%zd\n", thirdBbox_.size());
+//        printf("thirdBbox_.size()=%zd\n", thirdBbox_.size());
         if (thirdBbox_.empty()) return;
         refine(thirdBbox_, img_h, img_w, true);
         nms(thirdBbox_, nms_threshold[2], "Min");
         finalBbox_ = thirdBbox_;
+    }
+
+    void Detect::start2(const ncnn::Mat &ncnn_img,
+                        std::vector<Bbox> &finalBbox1_,
+                        std::vector<Bbox> &finalBbox2_,
+                        std::vector<Bbox> &finalBbox3_) {
+        img = ncnn_img;
+        img_w = img.w;
+        img_h = img.h;
+        img.substract_mean_normalize(mean_vals, norm_vals);
+
+        PNet();
+        //the first stage's nms
+        if (firstBbox_.empty()) return;
+        nms(firstBbox_, nms_threshold[0]);
+        refine(firstBbox_, img_h, img_w, true);
+//        printf("firstBbox_.size()=%zd\n", firstBbox_.size());
+
+        //second stage
+        RNet();
+//        printf("secondBbox_.size()=%zd\n", secondBbox_.size());
+        if (secondBbox_.empty()) return;
+        nms(secondBbox_, nms_threshold[1]);
+        refine(secondBbox_, img_h, img_w, true);
+
+        //third stage
+        ONet();
+//        printf("thirdBbox_.size()=%zd\n", thirdBbox_.size());
+        if (thirdBbox_.empty()) return;
+        refine(thirdBbox_, img_h, img_w, true);
+        nms(thirdBbox_, nms_threshold[2], "Min");
+        finalBbox1_ = firstBbox_;
+        finalBbox2_ = secondBbox_;
+        finalBbox3_ = thirdBbox_;
     }
 
 
