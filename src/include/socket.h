@@ -25,7 +25,7 @@
 
 using namespace std;
 
-namespace face {
+namespace Face {
 
     class Socket {
     public:

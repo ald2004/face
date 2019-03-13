@@ -26,12 +26,12 @@ static std::vector<int> IMWRITE_PARAMS = {CV_IMWRITE_JPEG_QUALITY, 100};
 static Mat dst;
 static bool run = false;
 
-void send(face::Socket socket, const char *buf, int len) {
+void send(Face::Socket socket, const char *buf, int len) {
     socket.Send(buf, len);
     SLEEP(40);
 }
 
-void openDoor(const face::Socket &sock) {
+void openDoor(const Face::Socket &sock) {
     send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00", 20);
     send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x80\xed\xff\xff\x00\x00\x01\x00", 16);
     SLEEP(100);
@@ -47,7 +47,7 @@ void openDoor(const face::Socket &sock) {
     send(sock, "\x55\xaa\x02\x81\x01\x00\x00\x00\x00\x00\xff\xff\x00\x00\x08\x00", 16);
 }
 
-void closeDoor(const face::Socket &sock) {
+void closeDoor(const Face::Socket &sock) {
     send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00", 20);
     send(sock, "\x55\xaa\x02\x80\x00\x00\x00\x00\x80\xed\xff\xff\x00\x00\x01\x00", 16);
     SLEEP(100);
@@ -66,7 +66,7 @@ void closeDoor(const face::Socket &sock) {
 void doorOpenAndClose(const string &ip, unsigned short port, int waitTime) {
     if (!run) {
         run = true;
-        face::Socket sock;
+        Face::Socket sock;
         sock.Connect(ip, port);
         if (sock.IsConnected()) {
             openDoor(sock);

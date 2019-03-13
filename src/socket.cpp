@@ -8,7 +8,7 @@
 #include<signal.h>
 #endif
 
-namespace face {
+namespace Face {
 
 #ifndef _WIN32
 #define strnicmp strncasecmp
