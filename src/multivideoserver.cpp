@@ -6,6 +6,7 @@
 #include <FacePreprocess.h>
 #include "thread"
 #include "socket.h"
+#include "ldmarkmodel.h"
 
 #ifdef _WIN32
 
@@ -80,10 +81,10 @@ void doorOpenAndClose(const string &ip, unsigned short port, int waitTime) {
     }
 }
 
-void recognize(Face::Detect
-               *mDetect,
-               Face::Recognize *mRecognize, User
-               *users,
+void recognize(Face::Detect *mDetect,
+               Face::Recognize *mRecognize,
+               ldmarkmodel modelt,
+               User *users,
                int len, string
                ip,
                int port,
@@ -114,16 +115,37 @@ void recognize(Face::Detect
 
             for (int i = 0; i < num_face; i++) {
 
-                Rect rect(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
-                cv::Mat dst_roi = dst(rect);
+                Rect faceBox(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
 
                 Mat warp;
                 Point2f left(box[i].ppoint[0], box[i].ppoint[5]);
                 Point2f right(box[i].ppoint[1], box[i].ppoint[6]);
                 Point2f nose(box[i].ppoint[2], box[i].ppoint[7]);
-                FacePreprocess::warpAffineFace(dst_roi, warp, left, right);
-                int faceWidth = dst_roi.cols;
-                int faceHeight = dst_roi.rows;
+
+                float angle = FacePreprocess::calcRotationAngle(left, right);
+                FacePreprocess::rotateAndCut(dst, warp, faceBox, angle);
+
+                Face::Bbox it{};
+                it.x2 = warp.cols;
+                it.y2 = warp.rows;
+
+                Mat warp1;
+                cv::resize(warp, warp1, cv::Size(48, 48), 0, 0, cv::INTER_CUBIC);
+                auto in = ncnn::Mat::from_pixels(warp1.data, ncnn::Mat::PIXEL_BGR2RGB, warp1.cols, warp1.rows);
+                std::vector<Face::Bbox> bboxes = mDetect->ONet(in, it);
+                if (bboxes.size() != 1) {
+                    continue;
+                }
+                Rect faceBox1(bboxes[0].x1, bboxes[0].y1, bboxes[0].x2 - bboxes[0].x1, bboxes[0].y2 - bboxes[0].y1);
+                warp = warp(faceBox1);
+
+                int faceWidth = warp.cols;
+                int faceHeight = warp.rows;
+                Mat current_shape;
+                modelt.track(warp, current_shape);
+                cv::Vec3d eav;
+                modelt.EstimateHeadPose(current_shape, eav);
+//                std::cout << "俯仰 : " << eav[0] << "  侧脸 :" << eav[1] << "  旋转 :" << eav[2] << std::endl;
 
                 Mat dst_roi_dst;
                 cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
@@ -202,7 +224,7 @@ void recognize(Face::Detect
                         }
 
                     }
-                } else if (max < 0.4 && faceScore > 0.9 && faceWidth > 120) {
+                } else if (max < 0.4 && faceScore > 0.9 && faceWidth > 100 && abs(eav[0]) < 19) {
                     string dir;
                     dir.append("./stranger/");
                     dir.append(tmp2);
@@ -240,8 +262,8 @@ int main(int argc, char **argv) {
     // embeddingPath
     const string embeddingPath = argv[3];
 
-//    const string video = argv[4];
-    const int video = 0;
+    const string video = argv[4];
+//    const int video = 0;
     const string ip = argv[5];
 
     const string s_port = argv[6];
@@ -300,6 +322,9 @@ int main(int argc, char **argv) {
     mDetect = new Face::Detect(tFaceModelDir);
     mRecognize = new Face::Recognize(tFaceModelDir);
 
+    ldmarkmodel modelt;
+    load_ldmarkmodel(tFaceModelDir + "/landmark.bin", modelt);
+
     mDetect->SetThreadNum(detectThreadNum);
     mRecognize->SetThreadNum(recognizeThreadNum);
 
@@ -308,7 +333,6 @@ int main(int argc, char **argv) {
 //    cap->open("rtsp://admin:111111ab@192.168.100.251:554/h264/ch1/main/1");
     cap->open(video);
 //    VideoCapture cap(0);
-    cout << cap->isOpened() << endl;
     if (!cap->isOpened()) {
         cout << "Failure to turn on video capture ." << endl;
         return -1;
@@ -331,7 +355,7 @@ int main(int argc, char **argv) {
 //        cv::cvtColor(frame, dst, COLOR_BGR2GRAY);
 
         if (first) {
-            std::thread t(recognize, mDetect, mRecognize, users, len2, ip, port, waitTime);
+            std::thread t(recognize, mDetect, mRecognize, modelt, users, len2, ip, port, waitTime);
             t.detach();
             first = false;
         }

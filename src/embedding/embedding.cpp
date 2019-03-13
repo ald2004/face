@@ -92,14 +92,30 @@ int main(int argc, char **argv) {
                 }
             }
             Face::Bbox box = finalBbox[maxIndex];
-            Rect rect(box.x1, box.y1, box.x2 - box.x1, box.y2 - box.y1);
-            cv::Mat dst_roi = mat(rect);
+            Rect faceBox(box.x1, box.y1, box.x2 - box.x1, box.y2 - box.y1);
 
 
             Mat warp;
             Point2f left(box.ppoint[0], box.ppoint[5]);
             Point2f right(box.ppoint[1], box.ppoint[6]);
-            FacePreprocess::warpAffineFace(dst_roi, warp, left, right);
+
+            float angle = FacePreprocess::calcRotationAngle(left, right);
+            FacePreprocess::rotateAndCut(mat, warp, faceBox, angle);
+
+            Face::Bbox it{};
+            it.x2 = warp.cols;
+            it.y2 = warp.rows;
+
+            Mat warp1;
+            cv::resize(warp, warp1, cv::Size(48, 48), 0, 0, cv::INTER_CUBIC);
+            auto in = ncnn::Mat::from_pixels(warp1.data, ncnn::Mat::PIXEL_BGR2RGB, warp1.cols, warp1.rows);
+            std::vector<Face::Bbox> bboxes = mDetect->ONet(in, it);
+            if (bboxes.size() != 1) {
+                cerr << filename << " -- the second stage did not find the face or many face!" << endl;
+            }else{
+                Rect faceBox1(bboxes[0].x1, bboxes[0].y1, bboxes[0].x2 - bboxes[0].x1, bboxes[0].y2 - bboxes[0].y1);
+                warp = warp(faceBox1);
+            }
 
             Mat dst_roi_dst;
             cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);

@@ -10,28 +10,11 @@ link_directories(libs ${NCNN_DIR}/lib)
 # 项目cpp 文件
 file(GLOB PROJECT_CPP multivideoserver.cpp detect.cpp recognize.cpp file_util.cpp socket.cpp)
 # 创建可执行文件
-add_executable(face ${PROJECT_CPP} include/FacePreprocess.h)
+add_executable(face ${PROJECT_CPP})
 
 target_link_libraries(face
         ncnn
         ${OpenCV_LIBS}
-        #        opencv_core343
-        #        opencv_calib3d343
-        #        opencv_features2d343
-        #        opencv_dnn343
-        #        opencv_flann343
-        #        opencv_highgui343
-        #        opencv_imgcodecs343
-        #        opencv_imgproc343
-        #        opencv_ml343
-        #        opencv_objdetect343
-        #        opencv_photo343
-        #        opencv_shape343
-        #        opencv_stitching343
-        #        opencv_superres343
-        #        opencv_video343
-        #        opencv_videoio343
-        #        opencv_videostab343
         )
 
 add_custom_command(TARGET face POST_BUILD        # Adds a post-build event to embedding
@@ -77,7 +60,6 @@ install(DIRECTORY model DESTINATION ''
         PATTERN "*.bin|*.param"
         PERMISSIONS OWNER_READ GROUP_READ
         )
-
 
 install(FILES
         include/detect.h
