@@ -44,18 +44,19 @@ namespace Face {
         std::vector<Bbox> PNet(ncnn::Mat &img);
 
         /**
-         *
-         * @param in 24*24
-         * @return
-         */
-        std::vector<Bbox> RNet(ncnn::Mat &in);
+          * @param resize_src 24*24
+          * @param it  x2 = src.width  , y2 = src.height
+          * @return
+          */
+        std::vector<Bbox> RNet(ncnn::Mat &resize_src, Bbox it);
 
         /**
-             *
-             * @param in 48*48
-             * @return
-             */
-        std::vector<Bbox> ONet(ncnn::Mat &in);
+          *
+          * @param resize_src 48*48
+          * @param it  x2 = src.width  , y2 = src.height
+          * @return
+          */
+        std::vector<Bbox> ONet(ncnn::Mat &resize_src, Bbox it);
 
     private:
         void generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox> &boundingBox_, float scale);

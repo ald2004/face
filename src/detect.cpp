@@ -274,14 +274,16 @@ namespace Face {
         }
     }
 
-    /**
-     *
-     * @param in 24*24
-     * @return
-     */
-    std::vector<Bbox> Detect::RNet(ncnn::Mat &in) {
+   /**
+    *
+    * @param resize_src 24*24
+    * @param it  x2 = src.width  , y2 = src.height
+    * @return
+    */
+    std::vector<Bbox> Detect::RNet(ncnn::Mat &resize_src, Bbox it) {
         std::vector<Bbox> boxes;
-        int count = 0;
+        ncnn::Mat in;
+        resize_bilinear(resize_src, in, 48, 48);
         ncnn::Extractor ex = Rnet.create_extractor();
         ex.set_num_threads(threadnum);
         ex.set_light_mode(true);
@@ -291,7 +293,6 @@ namespace Face {
         ex.extract("conv5-2", bbox);
 
         if ((float) score[1] > threshold[1]) {
-            Bbox it{};
             for (int channel = 0; channel < 4; channel++) {
                 it.regreCoord[channel] = (float) bbox[channel];//*(bbox.data+channel*bbox.cstep);
             }
@@ -335,22 +336,20 @@ namespace Face {
 
     /**
      *
-     * @param in 48 * 48
+     * @param resize_src 48 * 48
      * @return
      */
-    std::vector<Bbox> Detect::ONet(ncnn::Mat &in) {
+    std::vector<Bbox> Detect::ONet(ncnn::Mat &resize_src, Bbox it) {
         std::vector<Bbox> boxes;
-
         ncnn::Extractor ex = Onet.create_extractor();
         ex.set_num_threads(threadnum);
         ex.set_light_mode(true);
-        ex.input("data", in);
+        ex.input("data", resize_src);
         ncnn::Mat score, bbox, keyPoint;
         ex.extract("prob1", score);
         ex.extract("conv6-2", bbox);
         ex.extract("conv6-3", keyPoint);
         if ((float) score[1] > threshold[2]) {
-            Bbox it{};
             for (int channel = 0; channel < 4; channel++) {
                 it.regreCoord[channel] = (float) bbox[channel];
             }
