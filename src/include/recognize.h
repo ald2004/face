@@ -6,7 +6,6 @@
 #include "net.h"
 #include <algorithm>
 
-
 namespace Face {
     class Recognize {
     public:

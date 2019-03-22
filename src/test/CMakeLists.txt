@@ -3,10 +3,11 @@
 include_directories(
         ../include
         include
+        ../sdk
         ${NCNN_DIR}/include
         ${OpenCV_INCLUDE_DIRS}
 )
-link_directories(libs ${NCNN_DIR}/lib)
+link_directories(libs ${NCNN_DIR}/lib ${OpenCV_DIR}/lib)
 
 # 项目cpp 文件
 file(GLOB PROJECT_CPP test.cpp ../detect.cpp ../recognize.cpp ../file_util.cpp ../socket.cpp)
@@ -14,6 +15,7 @@ file(GLOB PROJECT_CPP test.cpp ../detect.cpp ../recognize.cpp ../file_util.cpp .
 add_executable(test ${PROJECT_CPP})
 
 target_link_libraries(test
+        face_sdk
         ncnn
         ${OpenCV_LIBS}
         )

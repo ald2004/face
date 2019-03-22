@@ -5,8 +5,7 @@ include_directories(
         ${NCNN_DIR}/include
         ${OpenCV_INCLUDE_DIRS}
 )
-link_directories(libs ${NCNN_DIR}/lib)
-
+link_directories(libs ${NCNN_DIR}/lib ${OpenCV_DIR}/lib)
 # 项目cpp 文件
 file(GLOB PROJECT_CPP multivideoserver.cpp detect.cpp recognize.cpp file_util.cpp socket.cpp)
 # 创建可执行文件

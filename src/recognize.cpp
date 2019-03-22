@@ -3,6 +3,7 @@ created by L. 2018.05.16
 */
 
 #include "recognize.h"
+#include "recognition.h"
 
 namespace Face {
 
@@ -14,8 +15,10 @@ namespace Face {
 
 //        std::string param_files = model_path + "/mobilefacenet.param";
 //        std::string bin_files = model_path + "/mobilefacenet.bin";
-        Recognet.load_param(param_files.c_str());
-        Recognet.load_model(bin_files.c_str());
+//        Recognet.load_param(param_files.c_str());
+//        Recognet.load_model(bin_files.c_str());
+        Recognet.load_param_mem(RECOGNITION::param);
+        Recognet.load_model(RECOGNITION::bin);
     }
 
     Recognize::~Recognize() {

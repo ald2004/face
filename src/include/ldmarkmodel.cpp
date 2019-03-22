@@ -2,6 +2,7 @@
 
 #include "ldmarkmodel.h"
 
+
 LinearRegressor::LinearRegressor() : weights(), meanvalue(), x(), isPCA(false) {
 
 }
@@ -274,6 +275,7 @@ bool load_ldmarkmodel(std::string filename, ldmarkmodel &model) {
     input_archive(model);
     file.close();
     return true;
+
 }
 
 

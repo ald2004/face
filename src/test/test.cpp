@@ -9,6 +9,7 @@
 
 #include "ldmarkmodel.h"
 #include <FacePreprocess.h>
+#include "face_sdk.h"
 
 #ifdef _WIN32
 
@@ -29,6 +30,11 @@ Face::Recognize *mRecognize;
 int threadNum;
 const char *tFaceModelDir;
 
+void gray(Mat &src, Mat &dst) {
+    cvtColor(src, dst, CV_BGR2GRAY);
+    cvtColor(dst, dst, CV_GRAY2BGR);
+}
+
 /**
  * 初始化模型
  */
@@ -40,6 +46,60 @@ void init() {
     mRecognize->SetThreadNum(recognizeThreadNum);
 }
 
+ncnn::Mat cutFace(Mat &mat, Mat &dst_roi_dst) {
+
+    vector<Face::Bbox> finalBbox;
+    mDetect->start(ncnn::Mat::from_pixels(mat.data, ncnn::Mat::PIXEL_BGR2RGB, mat.cols, mat.rows), finalBbox);
+    auto numFace = static_cast<int32_t>(finalBbox.size());
+    if (numFace == 0) {
+        cerr << " -- no face!" << endl;
+        exit(-1);
+    } else if (numFace > 1) {
+        cerr << " -- many face!" << endl;
+    }
+
+    int maxIndex = 0;
+    float maxScore = 0;
+    for (int i = 0; i < numFace; i++) {
+        if (finalBbox[i].score > maxScore) {
+            maxScore = finalBbox[i].score;
+            maxIndex = i;
+        }
+    }
+    Face::Bbox box = finalBbox[maxIndex];
+    Rect faceBox(box.x1, box.y1, box.x2 - box.x1, box.y2 - box.y1);
+
+
+    Mat warp;
+    Point2f left(box.ppoint[0], box.ppoint[5]);
+    Point2f right(box.ppoint[1], box.ppoint[6]);
+    Point2f nose(box.ppoint[2], box.ppoint[7]);
+
+    float angle = FacePreprocess::calcRotationAngle(left, right);
+    FacePreprocess::rotateAndCut(mat, warp, faceBox, angle);
+
+    Face::Bbox it{};
+    it.x2 = warp.cols;
+    it.y2 = warp.rows;
+
+    Mat warp1;
+    cv::resize(warp, warp1, cv::Size(48, 48), 0, 0, cv::INTER_CUBIC);
+    auto in = ncnn::Mat::from_pixels(warp1.data, ncnn::Mat::PIXEL_BGR2RGB, warp1.cols, warp1.rows);
+    std::vector<Face::Bbox> bboxes = mDetect->ONet(in, it);
+    if (bboxes.size() != 1) {
+    } else {
+        Rect faceBox1(bboxes[0].x1, bboxes[0].y1, bboxes[0].x2 - bboxes[0].x1, bboxes[0].y2 - bboxes[0].y1);
+        warp = warp(faceBox1);
+    }
+
+    cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+
+    ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst_roi_dst.cols,
+                                                  dst_roi_dst.rows);
+
+    return resize_mat;
+}
+
 /**
  * 两张人脸比较相似度
  * @param img1 人脸1
@@ -47,12 +107,21 @@ void init() {
  */
 void testRecognize(Mat img1, Mat img2) {
 
-    cv::resize(img1, img1, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
-    ncnn::Mat resize_mat1 = ncnn::Mat::from_pixels(img1.data, ncnn::Mat::PIXEL_BGR2RGB, img1.cols,
-                                                   img1.rows);
-    cv::resize(img2, img2, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
-    ncnn::Mat resize_mat2 = ncnn::Mat::from_pixels(img2.data, ncnn::Mat::PIXEL_BGR2RGB, img2.cols,
-                                                   img2.rows);
+    gray(img1, img1);
+    gray(img2, img2);
+
+    Mat dst_roi_dst1, dst_roi_dst2;
+
+    ncnn::Mat resize_mat1 = cutFace(img1, dst_roi_dst1);
+    ncnn::Mat resize_mat2 = cutFace(img2, dst_roi_dst2);
+
+
+//    cv::resize(img1, img1, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+//    ncnn::Mat resize_mat1 = ncnn::Mat::from_pixels(img1.data, ncnn::Mat::PIXEL_BGR2RGB, img1.cols,
+//                                                   img1.rows);
+//    cv::resize(img2, img2, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+//    ncnn::Mat resize_mat2 = ncnn::Mat::from_pixels(img2.data, ncnn::Mat::PIXEL_BGR2RGB, img2.cols,
+//                                                   img2.rows);
 
     vector<float> feature1, feature2;
     mRecognize->start(resize_mat1, feature1);
@@ -65,7 +134,7 @@ void testRecognize(Mat img1, Mat img2) {
     }
     cout << endl;
     cout << "embedding2:" << endl;
-    for (auto &f:feature1) {
+    for (auto &f:feature2) {
         cout << f << ",";
     }
     cout << endl;
@@ -74,6 +143,11 @@ void testRecognize(Mat img1, Mat img2) {
     double distance = Face::calculEuclidianDistance(feature1, feature2);
     cout << "similar :" << similar << endl;
     cout << "distance:" << distance << endl;
+
+    imshow("1", dst_roi_dst1);
+    imshow("2", dst_roi_dst2);
+
+    waitKey(11111111);
 }
 
 vector<Face::Bbox> mtcnn(Mat dst) {
@@ -148,12 +222,78 @@ void testLandmark(std::string modelFilePath) {
 
 
 int main(int argc, char **argv) {
+
+    char *embeddingPath = const_cast<char *>("../embedding/embedding.dat");
+    char *landmarkPath = const_cast<char *>("../model/face/landmark.bin");
+    char *imgPath = argv[1];
+
+    try {
+
+        Face::User *users;
+        int size;
+
+        load_face_users(embeddingPath, users, size);
+
+        cout << size << endl;
+        for (int i = 0; i < size; i++) {
+            cout << "id:" << users[i].id << endl;
+            cout << "name:" << users[i].name << endl;
+            vector<float> feature(users[i].embedding, users[i].embedding + 128);
+            cout << "embedding:" << endl;
+            for (auto &f:feature) {
+                cout << f << ",";
+            }
+            cout << endl;
+        }
+
+        if (face_model_init(landmarkPath) != FACE_SDK_STATUS_OK) throw runtime_error("model init err.");
+
+
+        Mat img1 = imread(imgPath);
+
+        std::vector<FACE_BOX> faceBoxes;
+        std::vector<int> indexes;
+        std::vector<float> scores;
+        float threshold = 0.55f;
+
+        if (face_detect_and_compare(img1, faceBoxes, users, size, indexes, scores, threshold) == FACE_SDK_STATUS_OK) {
+
+            int boxSize = faceBoxes.size();
+
+            for (int i = 0; i < boxSize; ++i) {
+                auto box = faceBoxes[i];
+                auto index = indexes[i];
+                auto score = scores[i];
+
+                rectangle(img1, Rect(box.x, box.y, box.width, box.height), Scalar(255, 0, 0));
+
+                cout << "score:" << score << " ,name:" << users[index].name << endl;
+            }
+
+
+        } else {
+            cout << "not found." << endl;
+        }
+
+        imshow("img1", img1);
+    } catch (const std::exception &e) {
+        cerr << e.what() << endl;
+    }
+    waitKey();
+
+    return 0;
+/*
     threadNum = 3;
     tFaceModelDir = "../model/face";
     init();
+
+//    testRecognize(imread("D:\\xx.jpg"), imread("D:\\yy.jpg"));
+//    return 0;
+
 //    testLandmark("./landmark.bin");
     ldmarkmodel modelt;
     load_ldmarkmodel("../model/face/landmark.bin", modelt);
+
 
     cv::VideoCapture mCamera(0);
 //    cv::VideoCapture mCamera("rtsp://admin:111111ab@192.168.100.251:554/h264/ch1/main/1");
@@ -167,6 +307,11 @@ int main(int argc, char **argv) {
     int start = GET_CURR_TIME();
     for (;;) {
         mCamera >> img1;
+
+        if (img1.empty()) continue;
+
+        gray(img1, img1);
+
         img1.copyTo(img2);
         img1.copyTo(img3);
 
@@ -183,7 +328,7 @@ int main(int argc, char **argv) {
             for (int i = 0; i < num_face; i++) {
                 Rect faceBox(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
 
-                /*Point[] points = new Point[]{
+                *//*Point[] points = new Point[]{
                         new Point(faceInfo[5 + 14 * i], faceInfo[10 + 14 * i]),
                         new Point(faceInfo[6 + 14 * i], faceInfo[11 + 14 * i]),
                         new Point(faceInfo[7 + 14 * i], faceInfo[12 + 14 * i]),
@@ -200,9 +345,9 @@ int main(int argc, char **argv) {
                 canvas.drawText("4", videoOverlap.getWidth() - (points[3].x) * widthScale, (points[3].y * heightScale), paint);
                 paint.setColor(Color.parseColor("#000000"));
                 canvas.drawText("5", videoOverlap.getWidth() - (points[4].x) * widthScale, (points[4].y * heightScale), paint);
-                paint.setColor(Color.parseColor("#009688"));*/
+                paint.setColor(Color.parseColor("#009688"));*//*
 
-                /*cv::circle(img,
+                *//*cv::circle(img,
                            cv::Point(static_cast<int>(box[i].ppoint[5 - 5]), static_cast<int>(box[i].ppoint[10 - 5])),
                            3, cv::Scalar(255, 0, 0));
                 cv::circle(img,
@@ -216,7 +361,7 @@ int main(int argc, char **argv) {
                            3, cv::Scalar(255, 0, 0));
                 cv::circle(img,
                            cv::Point(static_cast<int>(box[i].ppoint[9 - 5]), static_cast<int>(box[i].ppoint[14 - 5])),
-                           3, cv::Scalar(255, 0, 0));*/
+                           3, cv::Scalar(255, 0, 0));*//*
 
                 if (j == 2) {
 
@@ -277,5 +422,5 @@ int main(int argc, char **argv) {
 
 
 //    testRecognize(img1, img2);
-    return 0;
+    return 0;*/
 }

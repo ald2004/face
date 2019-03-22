@@ -5,6 +5,9 @@ created by L. 2018.05.16
 #include"detect.h"
 #include <algorithm>
 #include <map>
+#include "det1.h"
+#include "det2.h"
+#include "det3.h"
 
 namespace Face {
 
@@ -22,12 +25,22 @@ namespace Face {
                 model_path + "/det3.bin"
         };
 
-        Pnet.load_param(param_files[0].data());
-        Pnet.load_model(bin_files[0].data());
-        Rnet.load_param(param_files[1].data());
-        Rnet.load_model(bin_files[1].data());
-        Onet.load_param(param_files[2].data());
-        Onet.load_model(bin_files[2].data());
+//        Pnet.load_param(param_files[0].data());
+//        Pnet.load_model(bin_files[0].data());
+        Pnet.load_param_mem(DET1::param);
+        Pnet.load_model(DET1::bin);
+
+//        Rnet.load_param(param_files[1].data());
+//        Rnet.load_model(bin_files[1].data());
+        Rnet.load_param_mem(DET2::param);
+        Rnet.load_model(DET2::bin);
+
+//        Onet.load_param(param_files[2].data());
+//        Onet.load_model(bin_files[2].data());
+        Onet.load_param_mem(DET3::param);
+        Onet.load_model(DET3::bin);
+
+
     }
 
     Detect::Detect(const std::vector<std::string> param_files, const std::vector<std::string> bin_files) {
@@ -274,12 +287,12 @@ namespace Face {
         }
     }
 
-   /**
-    *
-    * @param resize_src 24*24
-    * @param it  x2 = src.width  , y2 = src.height
-    * @return
-    */
+    /**
+     *
+     * @param resize_src 24*24
+     * @param it  x2 = src.width  , y2 = src.height
+     * @return
+     */
     std::vector<Bbox> Detect::RNet(ncnn::Mat &resize_src, Bbox it) {
         std::vector<Bbox> boxes;
         ncnn::Mat in;

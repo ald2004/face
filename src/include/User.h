@@ -10,16 +10,13 @@
 
 namespace Face {
 
-    enum Sex {
-        MAN = (char) 1,
-        WOMAN = (char) 0
-    };
-
     struct User {
-        char name[30]{};
+        char id[32]{};
+        char name[64]{};
         float embedding[128]{};
 
-        explicit User(const char *name, float *embedding) {
+        explicit User(const char *id, const char *name, float *embedding) {
+            memcpy(this->id, id, sizeof(this->id));
             memcpy(this->name, name, sizeof(this->name));
             memcpy(this->embedding, embedding, sizeof(this->embedding));
         }

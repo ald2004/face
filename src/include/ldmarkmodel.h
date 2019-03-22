@@ -1,4 +1,3 @@
-#pragma once
 #ifndef LDMARKMODEL_H_
 #define LDMARKMODEL_H_
 
