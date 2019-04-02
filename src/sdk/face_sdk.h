@@ -5,6 +5,8 @@
 #ifndef FACE_FACE_SDK_H
 #define FACE_FACE_SDK_H
 
+#define FACE_SDK_VERSION 1.1
+
 
 #ifdef _WIN32
 #   ifdef __cplusplus
@@ -30,6 +32,7 @@
 #define FACE_SDK_STATUS_EMPTY_USER_ERROR 403 // 空的图片
 
 #define FACE_SDK_STATUS_NOT_FOUND_ERROR 404 // 找不到目录或文件
+#define FACE_SDK_STATUS_IO_ERROR 405 // IO 异常 打开或写入文件失败
 
 #define FACE_SDK_STATUS_MODEL_LOAD_ERROR 405 // 找不到目录或文件
 
@@ -50,8 +53,29 @@ struct FACE_BOX {
 #ifdef __cplusplus
 extern "C" {
 #endif
+/**
+ * 从图像创建 User 对象。用于从图片生成人脸库。
+ * 建议在使用之前使用
+ *
+ * float threshold[3] = {0.6f, 0.7f, 0.8f};
+ * face_model_conf(threshold,60);
+ * 防止图片质量及尺寸旋转等问题 检测不到脸的情况。
+ *
+ * @param src 脸图片
+ * @param user user对象
+ * @param dst
+ * @return
+ */
+FACE_SDK_DLL_EXP int face_embedding(cv::Mat &src, float embedding[128], cv::Mat &dst);
 
-
+/**
+ *
+ * @param filepath
+ * @param users
+ * @param size
+ * @return
+ */
+FACE_SDK_DLL_EXP int save_face_users(char *filepath, Face::User *users, int size);
 /**
  * 从文件读取人脸库
  * @param filePath
@@ -63,12 +87,11 @@ FACE_SDK_DLL_EXP int load_face_users(char *filePath, Face::User *&users, int &si
 
 /**
  * 初始化模型
- * @param ldmarkmodelPath  ldmark.bin
  * @param threadNum def 3
  * @return
  */
 FACE_SDK_DLL_EXP int
-face_model_init(char *ldmarkmodelPath, int threadNum = 3);
+face_model_init(int threadNum = 3);
 
 /**
  * 设置

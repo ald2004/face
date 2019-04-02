@@ -13,8 +13,30 @@
 #define CLOCK() clock()/1000
 #endif
 
+
+#include <fstream>
+#include <iostream>
+
+#ifdef _WIN32
+
+#include <direct.h>
+#include <io.h>
+
+#define ACCESS _access
+#define MKDIR(a) _mkdir((a))
+#else
+#include <unistd.h>
+#include <dirent.h>
+#include <stdarg.h>
+#include "sys/stat.h"
+#define ACCESS access
+#define MKDIR(a) mkdir((a),0755)
+#endif
+
+
 using namespace cv;
 using namespace std;
+std::vector<int> IMWRITE_PARAMS = {CV_IMWRITE_JPEG_QUALITY, 100};
 
 bool isNum(string str) {
     stringstream sin(str);
@@ -35,7 +57,83 @@ int endsWith(const string &s, const string &sub) {
     return s.rfind(sub) == (s.length() - sub.length()) ? 1 : 0;
 }
 
-void detImg(char *embeddingPath, char *landmarkPath, const string &imgPath) {
+/**
+  * @param folderPath
+  * @param files  bufferList
+  * @param depth
+  */
+void listFiles(const string &folderPath, list<string> *files, int depth) {
+#ifdef _WIN32
+    _finddata_t FileInfo{};
+    string strfind = folderPath + "\\*";
+    intptr_t Handle = _findfirst(strfind.c_str(), &FileInfo);
+
+    if (Handle == -1L) {
+        exit(-1);
+    }
+    do {
+        string filename = (folderPath + "\\" + FileInfo.name);
+        // has children
+        if (FileInfo.attrib & _A_SUBDIR) {
+            // curr dir & per dir
+            if ((depth - 1 > 0) && (strcmp(FileInfo.name, ".") != 0) && (strcmp(FileInfo.name, "..") != 0)) {
+                files->push_back(filename);
+                listFiles(filename, files, depth - 1);
+            }
+        } else {
+            files->push_back(filename);
+        }
+    } while (_findnext(Handle, &FileInfo) == 0);
+
+    _findclose(Handle);
+#else
+    DIR *dir;
+        struct dirent *entry;
+        if ((dir = opendir(folderPath.c_str())) == NULL) {
+            fprintf(stderr, "cannot open directory: %s\n", folderPath.c_str());
+            return;
+        }
+        while ((entry = readdir(dir)) != NULL) {
+            struct stat s{};
+            string filename = (folderPath + "/" + entry->d_name);
+            lstat(filename.c_str(), &s);
+//            cout << filename << endl;
+            if (S_ISDIR(s.st_mode)) {
+
+                if (strcmp(".", entry->d_name) == 0 ||
+                    strcmp("..", entry->d_name) == 0)
+                    continue;
+
+                if (depth - 1 > 0) {
+                    files->push_back(filename);
+                    listFiles(entry->d_name, files, depth - 1);
+                }
+            } else {
+                files->push_back(filename);
+            }
+        }
+        closedir(dir);
+#endif
+}
+
+/**
+   * @param pszDir
+   * @return
+   */
+int createDir(const char *pszDir) {
+    int iRet;
+    //not exist
+    iRet = ACCESS(pszDir, 0);
+    if (iRet != 0) {
+        iRet = MKDIR(pszDir);
+        if (iRet != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+void detImg(char *embeddingPath, const string &imgPath) {
     try {
 
         Face::User *users;
@@ -63,7 +161,7 @@ void detImg(char *embeddingPath, char *landmarkPath, const string &imgPath) {
         // ########### 设置模型参数 ##############
 
         // ########### 初始化模型 ##############
-        if (face_model_init(landmarkPath, 2) != FACE_SDK_STATUS_OK) throw runtime_error("model init err.");
+        if (face_model_init(2) != FACE_SDK_STATUS_OK) throw runtime_error("model init err.");
         // ########### 初始化模型 ##############
 
         // ########### 读取本地图片 ##############
@@ -130,7 +228,7 @@ int fps() {
     return fps;
 }
 
-void detRtsp(char *embeddingPath, char *landmarkPath, const string &url) {
+void detRtsp(char *embeddingPath, const string &url) {
     try {
 
         Face::User *users;
@@ -158,7 +256,7 @@ void detRtsp(char *embeddingPath, char *landmarkPath, const string &url) {
         // ########### 设置模型参数 ##############
 
         // ########### 初始化模型 ##############
-        if (face_model_init(landmarkPath) != FACE_SDK_STATUS_OK) throw runtime_error("model init err.");
+        if (face_model_init(4) != FACE_SDK_STATUS_OK) throw runtime_error("model init err.");
         // ########### 初始化模型 ##############
 
 
@@ -206,7 +304,6 @@ void detRtsp(char *embeddingPath, char *landmarkPath, const string &url) {
             // ########### 复制图片 ##############
             frame.copyTo(img1);
             // ########### 复制图片 ##############
-
 
             // ########### 声明变量 ##############
             std::vector<FACE_BOX> faceBoxes;
@@ -262,10 +359,87 @@ void detRtsp(char *embeddingPath, char *landmarkPath, const string &url) {
 
 }
 
+void embeddingToFile(const string &faceImgPath) {
+
+    // ########### 遍历目录下JPG文件 ##############
+    // buffer
+    list<string> imgs;
+    // list file
+    listFiles(faceImgPath, &imgs, 0);
+
+    int len = 0;
+
+    vector<string> imgVector;
+    for (const auto &img : imgs) {
+        if (endsWith(img.substr(faceImgPath.length() + 1, img.length()), ".jpg")) {
+            len++;
+            imgVector.push_back(img);
+        }
+    }
+    // ########### 遍历目录JPG文件 ##############
+
+
+    // ########### 根据文件个数开辟内存空间 ##############
+    Face::User *users = (Face::User *) malloc(len * sizeof(Face::User));
+    // ########### 根据文件个数开辟内存空间 ##############
+
+    // ########### 设置模型参数 ##############
+    if (face_model_conf(new float[3]{0.6f, 0.7f, 0.8f}, 60) != FACE_SDK_STATUS_OK)
+        throw runtime_error("config err.");
+    // ########### 设置模型参数 ##############
+
+    // ########### 初始化模型 ##############
+    if (face_model_init(4) != FACE_SDK_STATUS_OK) throw runtime_error("model init err.");
+    // ########### 初始化模型 ##############
+
+    // ########### 循环生成User ##############
+    for (unsigned int index = 0; index < imgVector.size(); ++index) {
+
+        // ########### 解析路径-文件名 ##############
+        string img = imgVector[index];
+        string filename = img.substr(faceImgPath.length() + 1, img.length());
+        string name = filename.substr(0, filename.length() - 4);
+        // ########### 解析路径-文件名 ##############
+
+        // ########### 读取文件 ##############
+        Mat mat = imread(img);
+        // ########### 读取文件 ##############
+
+        // ########### 生成向量 ##############
+/*        char id[32] = "id";
+        char name[64] = "name";*/
+        float embedding[128];
+        Mat dst;
+        face_embedding(mat, embedding, dst);
+        Face::User user{to_string(index).c_str(), name.c_str(), embedding};
+        users[index] = user;
+        // ########### 生成向量 ##############
+
+
+        // ########### 在人脸库目录创建 output文件夹 并把处理后的脸放入此文件夹 ##############
+        cout << "name:" << user.name << endl;
+        createDir((faceImgPath + "/output").c_str());
+        string outpath;
+        outpath.append(faceImgPath);
+        outpath.append("/output/");
+        outpath.append(filename);
+        imwrite(outpath, dst, IMWRITE_PARAMS);
+        // ########### 在人脸库目录创建 output文件夹 并把处理后的脸放入此文件夹 ##############
+
+    }
+    // ########### 循环生成User ##############
+
+    // ########### 将 ##############
+    string outpath;
+    outpath.append(faceImgPath);
+    outpath.append("/embedding.dat");
+    save_face_users(const_cast<char *>(outpath.c_str()), users, len);
+    // ########### 循环生成User ##############
+}
+
 int main(int argc, char **argv) {
 
     char *embeddingPath = const_cast<char *>("./embedding.dat");
-    char *landmarkPath = const_cast<char *>("./landmark.bin");
 
     if (argc < 2) {
         cerr << "no argv." << endl;
@@ -274,17 +448,20 @@ int main(int argc, char **argv) {
 
     string imgPath = argv[1];
 
-    if (startsWith(imgPath, "rtsp://") || isNum(imgPath) || endsWith(imgPath, ".mp4") | endsWith(imgPath, ".mp4")) {
+    if (startsWith(imgPath, "embedding://")) {
+        embeddingToFile(imgPath.substr(12));
+    } else if (startsWith(imgPath, "rtsp://")
+               || isNum(imgPath)
+               || endsWith(imgPath, ".mp4")
+               || endsWith(imgPath, ".avi")) {
         const string &url = imgPath;
-        detRtsp(embeddingPath,
-                landmarkPath,
-                url);
+        detRtsp(embeddingPath, url);
+    } else if (endsWith(imgPath, ".jpg")) {
+        detImg(embeddingPath, imgPath);
     } else {
-        detImg(embeddingPath,
-               landmarkPath,
-               imgPath);
+        cerr << "args can be [embedding://xxx] or [0] or [rtsp://xxxx] or [xxxxx.jpg] ." << endl;
+        return -1;
     }
-
 
     return 0;
 }

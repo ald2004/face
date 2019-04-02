@@ -89,6 +89,16 @@ namespace FacePreprocess {
         }
     }
 
+    /**
+     * 测试点是否超出屏幕
+     * @param point
+     * @param matSize
+     * @return
+     */
+    bool validatePoint(Point2f point, Mat mat) {
+        return !(point.x < 0 || point.y < 0 || point.x > mat.cols || point.y > mat.rows);
+    }
+
     void faceAlign(Mat &src, Mat &dst, Rect faceBox, Face::Bbox box) {
 
         // 112 * 112 left eye (35,45)   right eye (77,45)  nose (56,65)
@@ -131,6 +141,11 @@ namespace FacePreprocess {
         Point2f leftEyeRoteCut = Point2f(leftEyeRote.x - x, leftEyeRote.y - y);
         Point2f rightEyeRoteCut = Point2f(rightEyeRote.x - x, rightEyeRote.y - y);
         Point2f noseRoteCut = Point2f(noseRote.x - x, noseRote.y - y);
+
+        if (!validatePoint(leftEye, src) || !validatePoint(rightEye, src) || !validatePoint(nose, src)) {
+            return;
+        }
+
 
         // to 112 * 112
         float imgScale = maxWH * 1.f / DST_SIZE.width;

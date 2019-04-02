@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
     mRecognize = new Face::Recognize(tFaceModelDir);
 
 //    float threshold[3] = {0.2f, 0.1f, 0.8f};
-    float threshold[3] = {0.6f, 0.7f, 0.8f};;
+    float threshold[3] = {0.6f, 0.7f, 0.8f};
 //    mDetect->SetMinFace(40);
     mDetect->setThreshold(threshold);
     mDetect->SetThreadNum(detectThreadNum);
