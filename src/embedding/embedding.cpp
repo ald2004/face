@@ -106,12 +106,7 @@ int main(int argc, char **argv) {
 
 
         Mat warp;
-        Point2f left(box.ppoint[0], box.ppoint[5]);
-        Point2f right(box.ppoint[1], box.ppoint[6]);
-
-        float angle = FacePreprocess::calcRotationAngle(left, right);
-        FacePreprocess::rotateAndCut(mat, warp, faceBox, angle);
-
+        FacePreprocess::faceAlign(mat, warp, faceBox, box);
 
         Face::Bbox it{};
         it.x2 = warp.cols;
@@ -132,7 +127,7 @@ int main(int argc, char **argv) {
         gray(warp, warp);
 
         Mat dst_roi_dst;
-        cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+        cv::resize(warp, dst_roi_dst,FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
 
         ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst_roi_dst.cols,
                                                       dst_roi_dst.rows);

@@ -6,10 +6,26 @@
 #include "face_sdk.h"
 #include <recognize.h>
 #include <detect.h>
-
 #include "ldmarkmodel.h"
 #include <FacePreprocess.h>
 #include "file_util.h"
+
+
+#ifdef _WIN32
+
+#include<windows.h>
+
+#define SLEEP(a) Sleep(a)
+#define CLOCK() clock()
+#define LOCALTIME(result_time, time_seconds) localtime_s(result_time,time_seconds)
+#else
+#include <unistd.h>
+#define SLEEP(a) usleep(a*1000)
+#define CLOCK() clock()/1000
+#define LOCALTIME(time_seconds, result_time) localtime_r(result_time,time_seconds)
+#endif
+
+#define CHECK_LICENSE() if (sdk.licenseTime <= time(nullptr)) return FACE_SDK_STATUS_LICENSE_ERROR;
 
 struct SDK {
     Face::Detect *mDetect;
@@ -20,6 +36,21 @@ struct SDK {
     ldmarkmodel modelt;
     float threshold[3] = {0.9f, 0.9f, 0.99f};
     int minFaceSize = 60;
+    // 授权到期时间
+    time_t licenseTime = 1555000000;
+
+    void showLicense() {
+        tm result_time{};
+        LOCALTIME(&result_time, &licenseTime);
+
+        printf("[face_sdk] license to %d-%02d-%02d %02d:%02d:%02d\n",
+               result_time.tm_year + 1900,
+               result_time.tm_mon + 1,
+               result_time.tm_mday,
+               result_time.tm_hour,
+               result_time.tm_min,
+               result_time.tm_sec);
+    }
 
     void gray(cv::Mat &src, cv::Mat &dst) {
         cvtColor(src, dst, CV_BGR2GRAY);
@@ -32,10 +63,10 @@ SDK sdk{};
 #ifdef __cplusplus
 extern "C" {
 #endif
-void hello(const char *str) {
-    std::cout << str << std::endl;
-}
 int face_model_init(char *ldmarkmodelPath, int threadNum) {
+    sdk.showLicense();
+    CHECK_LICENSE();
+
     int detectThreadNum = threadNum, recognizeThreadNum = threadNum;
     sdk.threadNum = threadNum;
     sdk.mDetect = new Face::Detect(sdk.tFaceModelDir);
@@ -55,6 +86,7 @@ int face_model_init(char *ldmarkmodelPath, int threadNum) {
 }
 
 int face_model_conf(float threshold[3], int minFaceSize) {
+    CHECK_LICENSE();
 
     if (minFaceSize < 48)
         return FACE_SDK_STATUS_FACE_SIZE_TOO_SMALL;
@@ -76,6 +108,7 @@ int face_model_conf(float threshold[3], int minFaceSize) {
 }
 
 int load_face_users(char *filePath, Face::User *&users, int &size) {
+    CHECK_LICENSE();
 
     long fileLength = Face::getFileLength(filePath);
 
@@ -92,6 +125,7 @@ int load_face_users(char *filePath, Face::User *&users, int &size) {
 }
 
 int face_detect(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes) {
+    CHECK_LICENSE();
 
     if (!sdk.inited)
         return FACE_SDK_STATUS_NOT_INIT_ERROR;
@@ -117,6 +151,8 @@ int face_detect(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes) {
     return FACE_SDK_STATUS_OK;
 }
 int face_compare(cv::Mat &src, Face::User *users, int size, int &index, double &score, float threshold) {
+    CHECK_LICENSE();
+
     if (!sdk.inited)
         return FACE_SDK_STATUS_NOT_INIT_ERROR;
 
@@ -131,7 +167,7 @@ int face_compare(cv::Mat &src, Face::User *users, int size, int &index, double &
     sdk.gray(src, src);
 
     cv::Mat dst_roi_dst;
-    cv::resize(src, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+    cv::resize(src, dst_roi_dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
     ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB,
                                                       dst_roi_dst.cols,
                                                       dst_roi_dst.rows);
@@ -159,9 +195,12 @@ int face_compare(cv::Mat &src, Face::User *users, int size, int &index, double &
 
 
 }
+
 int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face::User *users, int size,
                             std::vector<int> &indexes, std::vector<float> &scores,
                             float threshold) {
+    CHECK_LICENSE();
+
     if (!sdk.inited)
         return FACE_SDK_STATUS_NOT_INIT_ERROR;
 
@@ -172,14 +211,27 @@ int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face
         return FACE_SDK_STATUS_EMPTY_USER_ERROR;
 
 
+    double scale = (640.0 / src.cols);
+//    double scale = 1;
+    cv::Mat tmp;
+    cv::resize(src, tmp, cv::Size(static_cast<int>(src.cols * scale), static_cast<int>(src.rows * scale)), 0, 0,
+               cv::INTER_CUBIC);
+
     std::vector<Face::Bbox> boxes;
-    sdk.mDetect->start(ncnn::Mat::from_pixels(src.data, ncnn::Mat::PIXEL_BGR2RGB, src.cols, src.rows), boxes);
+    sdk.mDetect->start(ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB, tmp.cols, tmp.rows), boxes);
 
     auto num_face = static_cast<int32_t>(boxes.size());
 
+//#pragma omp parallel for
     for (int i = 0; i < num_face; i++) {
         FACE_BOX faceBox{};
         Face::Bbox box = boxes[i];
+
+        box.x1 /= scale;
+        box.x2 /= scale;
+        box.y1 /= scale;
+        box.y2 /= scale;
+
         faceBox.x = box.x1;
         faceBox.y = box.y1;
         faceBox.width = box.x2 - box.x1;
@@ -190,13 +242,13 @@ int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face
         cv::Rect rect(box.x1, box.y1, box.x2 - box.x1, box.y2 - box.y1);
 
         cv::Mat warp;
-        cv::Point2f left(box.ppoint[0], box.ppoint[5]);
-        cv::Point2f right(box.ppoint[1], box.ppoint[6]);
 
-        float angle = FacePreprocess::calcRotationAngle(left, right);
-        FacePreprocess::rotateAndCut(src, warp, rect, angle);
+//        int64 start = CLOCK();
+        FacePreprocess::faceAlign(src, warp, rect, box);
+//        int64 end = CLOCK();
+//        cout << "faceAlign:time:" << (end - start) << endl;
 
-        Face::Bbox it{};
+        /*Face::Bbox it{};
         it.x2 = warp.cols;
         it.y2 = warp.rows;
 
@@ -209,7 +261,8 @@ int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face
         } else {
             cv::Rect rect1(bboxes[0].x1, bboxes[0].y1, bboxes[0].x2 - bboxes[0].x1, bboxes[0].y2 - bboxes[0].y1);
             warp = warp(rect1);
-        }
+        }*/
+
         // 最大相似度
         double score = 0;
         // 匹配到最大相似度的序号

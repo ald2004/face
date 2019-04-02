@@ -17,6 +17,8 @@
 #endif
 
 #define FACE_SDK_STATUS_OK 0 // 正常
+#define FACE_SDK_STATUS_LICENSE_ERROR -1 // 授权错误
+
 #define FACE_SDK_STATUS_NOT_IN_USER 201 // 未识别到脸
 
 #define FACE_SDK_STATUS_ILLEGAL_PARAMETER 300 // 非法参数

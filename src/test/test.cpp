@@ -11,16 +11,20 @@
 #include <FacePreprocess.h>
 #include "face_sdk.h"
 
+#include<ctime>
+
 #ifdef _WIN32
 
 #include<windows.h>
 
-#define SLEEP(a) Sleep(a)
-#define GET_CURR_TIME() clock()
+#define SLEEP(millisecond) Sleep(millisecond)
+#define CLOCK() clock()
+#define LOCALTIME(result_time, time_seconds) localtime_s(result_time,time_seconds)
 #else
 #include <unistd.h>
-#define SLEEP(a) usleep(a*1000)
-#define GET_CURR_TIME() clock()/1000
+#define SLEEP(millisecond) usleep(millisecond * 1000)
+#define CLOCK() clock()/1000
+#define LOCALTIME(time_seconds, result_time) localtime_r(result_time,time_seconds)
 #endif
 
 using namespace cv;
@@ -92,7 +96,7 @@ ncnn::Mat cutFace(Mat &mat, Mat &dst_roi_dst) {
         warp = warp(faceBox1);
     }
 
-    cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+    cv::resize(warp, dst_roi_dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
 
     ncnn::Mat resize_mat = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst_roi_dst.cols,
                                                   dst_roi_dst.rows);
@@ -116,10 +120,10 @@ void testRecognize(Mat img1, Mat img2) {
     ncnn::Mat resize_mat2 = cutFace(img2, dst_roi_dst2);
 
 
-//    cv::resize(img1, img1, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+//    cv::resize(img1, img1, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
 //    ncnn::Mat resize_mat1 = ncnn::Mat::from_pixels(img1.data, ncnn::Mat::PIXEL_BGR2RGB, img1.cols,
 //                                                   img1.rows);
-//    cv::resize(img2, img2, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+//    cv::resize(img2, img2, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
 //    ncnn::Mat resize_mat2 = ncnn::Mat::from_pixels(img2.data, ncnn::Mat::PIXEL_BGR2RGB, img2.cols,
 //                                                   img2.rows);
 
@@ -163,8 +167,8 @@ void testLandmark(std::string modelFilePath) {
         std::cin >> modelFilePath;
     }
 
-    cv::VideoCapture mCamera(0);
-//    cv::VideoCapture mCamera("rtsp://admin:111111ab@192.168.100.251:554/h264/ch1/main/1");
+//    cv::VideoCapture mCamera(0);
+    cv::VideoCapture mCamera("rtsp://admin:jl123456@192.168.1.65/h264/ch1/sub/1");
     if (!mCamera.isOpened()) {
         std::cout << "Camera opening failed..." << std::endl;
         system("pause");
@@ -172,11 +176,11 @@ void testLandmark(std::string modelFilePath) {
     }
     cv::Mat Image;
     cv::Mat current_shape;
-    int start = GET_CURR_TIME();
+    int start = CLOCK();
     for (;;) {
         mCamera >> Image;
 
-        int end = GET_CURR_TIME();
+        int end = CLOCK();
         bool isDetFace = false;
         if (end - start > 2000) {
             start = end;
@@ -232,17 +236,19 @@ int main(int argc, char **argv) {
         Face::User *users;
         int size;
 
-        load_face_users(embeddingPath, users, size);
+        if (load_face_users(embeddingPath, users, size) != FACE_SDK_STATUS_OK) throw runtime_error("load face err.");
 
         cout << size << endl;
         for (int i = 0; i < size; i++) {
             cout << "id:" << users[i].id << endl;
             cout << "name:" << users[i].name << endl;
+/*
             vector<float> feature(users[i].embedding, users[i].embedding + 128);
             cout << "embedding:" << endl;
             for (auto &f:feature) {
                 cout << f << ",";
             }
+*/
             cout << endl;
         }
 
@@ -276,10 +282,10 @@ int main(int argc, char **argv) {
         }
 
         imshow("img1", img1);
+        waitKey();
     } catch (const std::exception &e) {
         cerr << e.what() << endl;
     }
-    waitKey();
 
     return 0;
 /*
@@ -304,7 +310,7 @@ int main(int argc, char **argv) {
     }
     cv::Mat img1, img2, img3;
     cv::Mat current_shape;
-    int start = GET_CURR_TIME();
+    int start = CLOCK();
     for (;;) {
         mCamera >> img1;
 

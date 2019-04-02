@@ -10,14 +10,14 @@
 
 #ifdef _WIN32
 
-#include<windows.h>
+//#include<windows.h>
 
 #define SLEEP(a) Sleep(a)
-#define GET_CURR_TIME() clock()
+#define CLOCK() clock()
 #else
 #include <unistd.h>
 #define SLEEP(a) usleep(a*1000)
-#define GET_CURR_TIME() clock()/1000
+#define CLOCK() clock()/1000
 #endif
 
 using namespace cv;
@@ -236,11 +236,11 @@ void recognize(Face::Detect *mDetect,
             strftime(tmp, sizeof(tmp), "%H%M%S", localtime(&timep));
             strftime(tmp2, sizeof(tmp2), "%Y%m%d", localtime(&timep));
 
-            int64 start = GET_CURR_TIME();
+            int64 start = CLOCK();
             vector<Face::Bbox> box;
             mDetect->start(ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR2RGB, dst.cols, dst.rows), box);
             auto num_face = static_cast<int32_t>(box.size());
-            int64 end = GET_CURR_TIME();
+            int64 end = CLOCK();
 //            cout << "mtcnn:" << (end - start) << "ms" << endl;
 
             for (int i = 0; i < num_face; i++) {
@@ -252,8 +252,7 @@ void recognize(Face::Detect *mDetect,
                 Point2f right(box[i].ppoint[1], box[i].ppoint[6]);
                 Point2f nose(box[i].ppoint[2], box[i].ppoint[7]);
 
-                float angle = FacePreprocess::calcRotationAngle(left, right);
-                FacePreprocess::rotateAndCut(dst, warp, faceBox, angle);
+                FacePreprocess::faceAlign(dst, warp, faceBox, box[i]);
 
                 Face::Bbox it{};
                 it.x2 = warp.cols;
@@ -277,8 +276,9 @@ void recognize(Face::Detect *mDetect,
                 modelt.EstimateHeadPose(current_shape, eav);
 //                std::cout << "俯仰 : " << eav[0] << "  侧脸 :" << eav[1] << "  旋转 :" << eav[2] << std::endl;
 
+
                 Mat dst_roi_dst;
-                cv::resize(warp, dst_roi_dst, cv::Size(112, 112), 0, 0, cv::INTER_CUBIC);
+                cv::resize(warp, dst_roi_dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
                 ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst_roi_dst.data, ncnn::Mat::PIXEL_BGR2RGB,
                                                                   dst_roi_dst.cols,
                                                                   dst_roi_dst.rows);
@@ -289,10 +289,10 @@ void recognize(Face::Detect *mDetect,
 
 //                cout << "faceHAngle:" << faceHAngle << "°" << endl;
 //                cout << "faceScore:" << faceScore << endl;
-                start = GET_CURR_TIME();
+                start = CLOCK();
                 vector<float> feature2;
                 mRecognize->start(resize_mat_sub, feature2);
-                end = GET_CURR_TIME();
+                end = CLOCK();
 //                imshow("1", dst_roi_dst);
 //                waitKey(1);
 //            cout << Face::calculEuclidianDistance(feature1, feature2) << endl;
@@ -335,23 +335,24 @@ void recognize(Face::Detect *mDetect,
                          << " time:" << (end - start) << "ms"
                          <<
                          endl;
-                    if (faceScore > 0.8) {
-                        if (!run) {
-                            thread thread1(doorOpenAndClose, ip, port, waitTime);
-                            thread1.detach();
-                            string dir;
-                            dir.append("./confirmed/");
-                            dir.append(tmp2);
-                            dir.append("/");
-                            Face::createDir("./confirmed/");
-                            Face::createDir(dir.c_str());
-                            string outpath;
-                            outpath.append(dir);
-                            outpath.append(outFileName);
-                            imwrite(outpath, dst_roi_dst, IMWRITE_PARAMS);
-                        }
-
-                    }
+                    //     if (faceScore > 0.8) {
+                    //       if (!run) {
+//                            thread thread1(doorOpenAndClose, ip, port, waitTime);
+//                            thread1.detach();
+                    string dir;
+                    dir.append("./confirmed/");
+                    dir.append(tmp2);
+                    dir.append("/");
+                    Face::createDir("./confirmed/");
+                    Face::createDir(dir.c_str());
+                    string outpath;
+                    outpath.append(dir);
+                    outpath.append(outFileName);
+                    imwrite(outpath, dst_roi_dst, IMWRITE_PARAMS);
+                    //     }
+                    putTextZH(dst, "王晓明", Point(box[i].x1, box[i].y1), Scalar(128, 255, 100), 30, "楷体", false,
+                              false);
+                    //}
                 } else if (max < 0.4 && faceScore > 0.9 && faceWidth > 100 && abs(eav[0]) < 19) {
                     string dir;
                     dir.append("./stranger/");
@@ -364,9 +365,8 @@ void recognize(Face::Detect *mDetect,
                     outpath.append(outFileName);
                     imwrite(outpath, dst_roi_dst, IMWRITE_PARAMS);
                 }
-          /*      rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
-                putTextZH(dst, "王晓明", Point(box[i].x1, box[i].y1), Scalar(128, 255, 100), 30, "楷体", false,
-                          false);
+                rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
+
 
                 string s;
                 s.append("俯仰:");
@@ -380,7 +380,7 @@ void recognize(Face::Detect *mDetect,
                           false);
 
                 imshow("test", dst);
-                waitKey(1);*/
+                waitKey(1);
             }
 
         } catch (int x) {
@@ -415,7 +415,7 @@ int main(int argc, char **argv) {
     isPort >> port;
 
     const string s_waitTime = argv[7];
-    istringstream isWaitTime(s_port);
+    istringstream isWaitTime(s_waitTime);
     int waitTime;
     isWaitTime >> waitTime;
 
@@ -494,7 +494,7 @@ int main(int argc, char **argv) {
 
 //        dst = frame;
         frame.copyTo(dst);
-//        cv::resize(frame, dst, cv::Size(640, 360), 0, 0, cv::INTER_CUBIC);
+//        cv::resize(frame, dst, cv::Size(640*2, 360*2), 0, 0, cv::INTER_CUBIC);
 //        cv::cvtColor(frame, dst, COLOR_BGR2GRAY);
 
         if (first) {

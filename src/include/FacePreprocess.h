@@ -14,6 +14,12 @@
 
 namespace FacePreprocess {
     using namespace cv;
+    using namespace std;
+
+    Point2f DST_LEFT_EYE(35, 35);
+    Point2f DST_RIGHT_EYE(77, 35);
+    Point2f DST_NOSE(56, 55);
+    Size DST_SIZE(112, 112);
 
     Point2f calcRotationPoint(Point2f point, Mat affine_matrix) {
         int x = static_cast<int>(affine_matrix.ptr<double>(0)[0] * (point.x) +
@@ -40,8 +46,57 @@ namespace FacePreprocess {
         return calcRotationPoint(point, Point2f(0, 0), angle);
     }
 
-    void rotateAndCut(Mat &src, Mat &dst, Rect faceBox, float angle) {
+    float calcRotationAngle(Point2f left, Point2d right) {
+        double dy = (right.y - left.y);
+        double dx = (right.x - left.x);
+        double angle = atan2(dy, dx) * 180.0 / CV_PI; // Convert from radians to degrees.
+        return static_cast<float>(angle);
+    }
 
+    void translateTransform(cv::Mat const &src, cv::Mat &dst, int dx, int dy) {
+        CV_Assert(src.depth() == CV_8U);
+        const int rows = src.rows;
+        const int cols = src.cols;
+        dst.create(rows, cols, src.type());
+        Vec3b *p;
+        for (int i = 0; i < rows; i++) {
+            p = dst.ptr<Vec3b>(i);
+            for (int j = 0; j < cols; j++) {
+                //平移后坐标映射到原图像
+                int x = j - dx;
+                int y = i - dy;
+                //保证映射后的坐标在原图像范围内
+                if (x >= 0 && y >= 0 && x < cols && y < rows)
+                    p[j] = src.ptr<Vec3b>(y)[x];
+            }
+        }
+    }
+
+    void translateTransformSize(cv::Mat const &src, cv::Mat &dst, int dx, int dy) {
+        CV_Assert(src.depth() == CV_8U);
+        const int rows = src.rows + abs(dy); //输出图像的大小
+        const int cols = src.cols + abs(dx);
+        dst.create(rows, cols, src.type());
+        Vec3b *p;
+        for (int i = 0; i < rows; i++) {
+            p = dst.ptr<Vec3b>(i);
+            for (int j = 0; j < cols; j++) {
+                int x = j - dx;
+                int y = i - dy;
+                if (x >= 0 && y >= 0 && x < src.cols && y < src.rows)
+                    p[j] = src.ptr<Vec3b>(y)[x];
+            }
+        }
+    }
+
+    void faceAlign(Mat &src, Mat &dst, Rect faceBox, Face::Bbox box) {
+
+        // 112 * 112 left eye (35,45)   right eye (77,45)  nose (56,65)
+        Point2f leftEye(box.ppoint[0], box.ppoint[5]);
+        Point2f rightEye(box.ppoint[1], box.ppoint[6]);
+        Point2f nose(box.ppoint[2], box.ppoint[7]);
+
+        float angle = calcRotationAngle(leftEye, rightEye);
         // full
         int maxBorder = (int) (max(src.cols, src.rows) * 1.414); // sqrt(2)*max
         int dx = (maxBorder - src.cols) / 2;
@@ -58,8 +113,12 @@ namespace FacePreprocess {
         Point2f leftBottom = calcRotationPoint(Point2f(faceBox.x + dx, faceBox.y + dy + faceBox.height), affine_matrix);
         Point2f rightTop = calcRotationPoint(Point2f(faceBox.x + dx + faceBox.width, faceBox.y + dy), affine_matrix);
         Point2f rightBottom = calcRotationPoint(
-                Point2f(faceBox.x + dx + faceBox.width, faceBox.y + dy + faceBox.height), affine_matrix);
+                Point2f(faceBox.x + dx + faceBox.width, faceBox.y + dy + faceBox.height),
+                affine_matrix);
 
+        Point2f leftEyeRote = calcRotationPoint(Point2f(leftEye.x + dx, leftEye.y + dy), affine_matrix);
+        Point2f rightEyeRote = calcRotationPoint(Point2f(rightEye.x + dx, rightEye.y + dy), affine_matrix);
+        Point2f noseRote = calcRotationPoint(Point2f(nose.x + dx, nose.y + dy), affine_matrix);
 
         int x = (int) (std::min)(leftTop.x, leftBottom.x);
         int y = (int) (std::min)(leftTop.y, rightTop.y);
@@ -69,6 +128,72 @@ namespace FacePreprocess {
 
         dst = Mat(dst, Rect(x, y, maxWH, maxWH));
 
+        Point2f leftEyeRoteCut = Point2f(leftEyeRote.x - x, leftEyeRote.y - y);
+        Point2f rightEyeRoteCut = Point2f(rightEyeRote.x - x, rightEyeRote.y - y);
+        Point2f noseRoteCut = Point2f(noseRote.x - x, noseRote.y - y);
+
+        // to 112 * 112
+        float imgScale = maxWH * 1.f / DST_SIZE.width;
+        float faceXScale = abs(
+                ((DST_LEFT_EYE * imgScale).x - (DST_RIGHT_EYE * imgScale).x) /
+                (leftEyeRoteCut.x - rightEyeRoteCut.x));
+        float faceYScale = abs(
+                ((DST_LEFT_EYE * imgScale).y - (DST_NOSE * imgScale).y) /
+                (leftEyeRoteCut.y - noseRoteCut.y));
+
+
+        Mat output = Mat::zeros(maxWH, maxWH, src.type());
+
+        cv::resize(dst, output, Size(static_cast<int>(dst.cols * faceXScale), static_cast<int>(dst.rows * faceXScale)),
+                   0,
+                   0, cv::INTER_CUBIC);
+        Mat temp = Mat::zeros(output.cols * 4, output.rows * 4, dst.type());
+        output.copyTo(
+                temp(Rect(temp.cols / 2 - output.cols / 2, temp.rows / 2 - output.rows / 2, output.cols, output.rows))
+        );
+
+        temp(Rect(
+                (temp.cols / 2 - output.cols / 2) - (DST_LEFT_EYE.x * imgScale - leftEyeRoteCut.x * faceXScale),
+                (temp.rows / 2 - output.rows / 2) - (DST_LEFT_EYE.y * imgScale - leftEyeRoteCut.y * faceXScale),
+                maxWH,
+                maxWH
+        )).copyTo(output);
+
+
+
+
+        /* Point2f srcTri[3];
+         srcTri[0] = leftEyeRoteCut;
+         srcTri[1] = rightEyeRoteCut;
+         srcTri[2] = noseRoteCut;
+
+         Point2f dstTri[3];
+         dstTri[0] = DST_LEFT_EYE * imgScale;
+         dstTri[1] = DST_RIGHT_EYE * imgScale;
+         dstTri[2] = DST_NOSE * imgScale;
+
+         Mat warp_mat = getAffineTransform(srcTri, dstTri);
+         warpAffine(dst, output, warp_mat, output.size());*/
+
+        dst = output;
+
+        /*cv::resize(output, output, DST_SIZE, 0, 0, cv::INTER_CUBIC);
+
+        circle(output, DST_LEFT_EYE, 5, Scalar(0, 255, 0), -1);
+        circle(output, DST_RIGHT_EYE, 5, Scalar(0, 255, 0), -1);
+        circle(output, DST_NOSE, 5, Scalar(0, 255, 0), -1);
+
+
+        circle(src, leftEye, 5, Scalar(0, 255, 0), -1);
+        circle(src, rightEye, 5, Scalar(0, 255, 0), -1);
+        circle(src, nose, 5, Scalar(0, 255, 0), -1);
+
+        cout<< leftEye << endl;
+        cout<< src.size << endl;
+
+        imshow("1", src);
+        imshow("2", output);*/
+//        waitKey(10);
     }
 
     void rotate(Mat &src, Mat &dst, float angle, bool isCut = true) {
@@ -95,13 +220,6 @@ namespace FacePreprocess {
         if (isCut && (dst.rows > x + targetSize.width || dst.cols > y + targetSize.height)) {
             dst = Mat(dst, rect);
         }
-    }
-
-    float calcRotationAngle(Point2f left, Point2d right) {
-        double dy = (right.y - left.y);
-        double dx = (right.x - left.x);
-        double angle = atan2(dy, dx) * 180.0 / CV_PI; // Convert from radians to degrees.
-        return static_cast<float>(angle);
     }
 
 

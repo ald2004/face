@@ -1,6 +1,6 @@
 /.idea
 /cmake-build-*
-/src/libs/*.a
+/src/libs/*.result_time
 /src/libs/*.lib
 /src/libs/*.dll
 /src/libs/*.so
