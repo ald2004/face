@@ -37,7 +37,7 @@ struct SDK {
     float threshold[3] = {0.9f, 0.9f, 0.99f};
     int minFaceSize = 60;
     // 授权到期时间
-    time_t licenseTime = 1555000000;
+    time_t licenseTime = 1558000000;
 
     void showLicense() {
         tm result_time{};
@@ -151,9 +151,13 @@ int face_embedding(cv::Mat &src, float embedding[128], cv::Mat &dst) {
     FacePreprocess::faceAlign(src, warp, rect, box);
 
     cv::resize(warp, dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
-    ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(dst.data, ncnn::Mat::PIXEL_BGR2RGB,
-                                                      dst.cols,
-                                                      dst.rows);
+
+    cv::Mat tmp;
+    sdk.gray(dst, tmp);
+
+    ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB,
+                                                      tmp.cols,
+                                                      tmp.rows);
     std::vector<float> feature;
     sdk.mRecognize->start(resize_mat_sub, feature);
 
@@ -267,9 +271,14 @@ int face_compare(cv::Mat &src, Face::User *users, int size, int &index, double &
 
 }
 
-int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face::User *users, int size,
-                            std::vector<int> &indexes, std::vector<float> &scores,
-                            float threshold) {
+int face_detect_and_compare(cv::Mat &src,
+                            std::vector<FACE_BOX> &faceBoxes,
+                            Face::User *users,
+                            int size,
+                            std::vector<int> &indexes,
+                            std::vector<float> &scores,
+                            float threshold,
+                            double scale) {
     CHECK_LICENSE();
 
     if (!sdk.inited)
@@ -282,13 +291,14 @@ int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face
         return FACE_SDK_STATUS_EMPTY_USER_ERROR;
 
 
-    double scale = (640.0 / src.cols);
-//    double scale = 1;
     cv::Mat tmp;
     cv::resize(src, tmp, cv::Size(static_cast<int>(src.cols * scale), static_cast<int>(src.rows * scale)), 0, 0,
                cv::INTER_CUBIC);
 
     std::vector<Face::Bbox> boxes;
+#if NCNN_VULKAN
+    ncnn::create_gpu_instance();
+#endif // NCNN_VULKAN
     sdk.mDetect->start(ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB, tmp.cols, tmp.rows), boxes);
 
     auto num_face = static_cast<int32_t>(boxes.size());
@@ -302,6 +312,10 @@ int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face
         box.x2 /= scale;
         box.y1 /= scale;
         box.y2 /= scale;
+
+        for (int j = 0; j < 10; j++) {
+            box.ppoint[j] /= scale;
+        }
 
         faceBox.x = box.x1;
         faceBox.y = box.y1;
@@ -349,7 +363,9 @@ int face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face
         scores.push_back(static_cast<float &&>(score));
         faceBoxes.push_back(faceBox);
     }
-
+#if NCNN_VULKAN
+    ncnn::destroy_gpu_instance();
+#endif // NCNN_VULKAN
     return FACE_SDK_STATUS_OK;
 }
 #ifdef __cplusplus

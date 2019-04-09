@@ -15,7 +15,11 @@ include_directories(
 )
 
 link_directories(libs ${NCNN_DIR}/lib ${OpenCV_DIR}/lib)
-
+if (NCNN_VULKAN)
+    list(APPEND NCNN_EXAMPLE_LINK_LIBRARIES ${Vulkan_LIBRARY})
+else ()
+    set(NCNN_EXAMPLE_LINK_LIBRARIES  )
+endif ()
 
 #编译为动态库
 add_library(face_sdk SHARED ${PROJECT_CPP})
@@ -23,5 +27,6 @@ add_library(face_sdk SHARED ${PROJECT_CPP})
 target_link_libraries(
         face_sdk
         ncnn
+        ${NCNN_EXAMPLE_LINK_LIBRARIES}
         ${OpenCV_LIBS}
 )

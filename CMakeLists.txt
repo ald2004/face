@@ -21,6 +21,12 @@ option(BUILD_EMBEDDING "BUILD_EMBEDDING" ON)
 option(BUILD_SDK "BUILD_SDK c/c++ (face_sdk.so | face_sdk.dll) " ON)
 option(BUILD_TEST "BUILD_TEST" ON)
 
+if(NCNN_VULKAN)
+    find_package(Vulkan REQUIRED)
+    include_directories(${Vulkan_INCLUDE_DIR})
+endif()
+
+
 # Find OpenCV, you may need to set OpenCV_DIR variable
 # to the absolute path to the directory containing OpenCVConfig.cmake file
 # via the command line or GUI
