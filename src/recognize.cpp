@@ -17,6 +17,9 @@ namespace Face {
 //        std::string bin_files = model_path + "/mobilefacenet.bin";
 //        Recognet.load_param(param_files.c_str());
 //        Recognet.load_model(bin_files.c_str());
+#if NCNN_VULKAN
+        Recognet.use_vulkan_compute = 1;
+#endif // NCNN_VULKAN
         Recognet.load_param_mem(RECOGNITION::param);
         Recognet.load_model(RECOGNITION::bin);
     }
@@ -47,7 +50,16 @@ namespace Face {
     }
 
     void Recognize::start(ncnn::Mat &ncnn_img, std::vector<float> &feature128) {
+#if NCNN_VULKAN
+        ncnn::create_gpu_instance();
+#endif // NCNN_VULKAN
+
         RecogNet(ncnn_img);
+
+#if NCNN_VULKAN
+        ncnn::destroy_gpu_instance();
+#endif // NCNN_VULKAN
+
         feature128 = feature_out;
     }
 
