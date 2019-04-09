@@ -107,12 +107,12 @@ namespace FacePreprocess {
         Point2f nose(box.ppoint[2], box.ppoint[7]);
 
         float angle = calcRotationAngle(leftEye, rightEye);
+
         // full
         int maxBorder = (int) (max(src.cols, src.rows) * 1.414); // sqrt(2)*max
         int dx = (maxBorder - src.cols) / 2;
         int dy = (maxBorder - src.rows) / 2;
         copyMakeBorder(src, dst, dy, dy, dx, dx, BORDER_CONSTANT);
-
         //rotate
         Point2f center(dst.cols / 2.f, dst.rows / 2.f);
 
@@ -135,9 +135,7 @@ namespace FacePreprocess {
         int w = static_cast<int>((std::max)(rightTop.x, rightBottom.x) - x);
         int h = static_cast<int>((std::max)(leftBottom.y, rightBottom.y) - y);
         int maxWH = (std::max)(w, h);
-
         dst = Mat(dst, Rect(x, y, maxWH, maxWH));
-
         Point2f leftEyeRoteCut = Point2f(leftEyeRote.x - x, leftEyeRote.y - y);
         Point2f rightEyeRoteCut = Point2f(rightEyeRote.x - x, rightEyeRote.y - y);
         Point2f noseRoteCut = Point2f(noseRote.x - x, noseRote.y - y);
@@ -145,7 +143,6 @@ namespace FacePreprocess {
         if (!validatePoint(leftEye, src) || !validatePoint(rightEye, src) || !validatePoint(nose, src)) {
             return;
         }
-
 
         // to 112 * 112
         float imgScale = maxWH * 1.f / DST_SIZE.width;
@@ -158,7 +155,6 @@ namespace FacePreprocess {
 
 
         Mat output = Mat::zeros(maxWH, maxWH, src.type());
-
         cv::resize(dst, output, Size(static_cast<int>(dst.cols * faceXScale), static_cast<int>(dst.rows * faceXScale)),
                    0,
                    0, cv::INTER_CUBIC);
@@ -167,13 +163,17 @@ namespace FacePreprocess {
                 temp(Rect(temp.cols / 2 - output.cols / 2, temp.rows / 2 - output.rows / 2, output.cols, output.rows))
         );
 
+        int tran_x = (temp.cols / 2 - output.cols / 2) - (DST_LEFT_EYE.x * imgScale - leftEyeRoteCut.x * faceXScale);
+        int tran_y = (temp.rows / 2 - output.rows / 2) - (DST_LEFT_EYE.y * imgScale - leftEyeRoteCut.y * faceXScale);
+
+        if (temp.cols > tran_x || temp.rows > tran_y) return;
+
         temp(Rect(
-                (temp.cols / 2 - output.cols / 2) - (DST_LEFT_EYE.x * imgScale - leftEyeRoteCut.x * faceXScale),
-                (temp.rows / 2 - output.rows / 2) - (DST_LEFT_EYE.y * imgScale - leftEyeRoteCut.y * faceXScale),
+                tran_x,
+                tran_y,
                 maxWH,
                 maxWH
         )).copyTo(output);
-
 
 
 
