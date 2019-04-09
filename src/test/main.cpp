@@ -175,6 +175,10 @@ void detImg(char *embeddingPath, const string &imgPath) {
         float threshold = 0.55f;
         // ########### 声明变量 ##############
 
+
+        // ########### 缩放检测 ##############
+        // ########### 缩放检测 ##############
+
         // ########### 对比人脸 ##############
         int64 start = CLOCK();
         if (face_detect_and_compare(img1, faceBoxes, users, size, indexes, scores, threshold) ==
@@ -192,7 +196,8 @@ void detImg(char *embeddingPath, const string &imgPath) {
 
                 rectangle(img1, Rect(box.x, box.y, box.width, box.height), Scalar(255, 0, 0));
 
-                cout << "score:" << score
+                cout << "[ x:" << box.x << ", y:" << box.y << ", w:" << box.width << ", h:" << box.height << " ] "
+                     << "score:" << score
                      << " ,name:" << users[index].name
                      << ",time:" << (end - start) << "ms"
                      << endl;
@@ -314,8 +319,11 @@ void detRtsp(char *embeddingPath, const string &url) {
 
             // ########### 对比人脸 ##############
             int64 start = CLOCK();
-            if (face_detect_and_compare(img1, faceBoxes, users, size, indexes, scores, threshold) ==
+
+
+            if (face_detect_and_compare(img1, faceBoxes, users, size, indexes, scores, threshold, 1) ==
                 FACE_SDK_STATUS_OK) {
+
                 int64 end = CLOCK();
                 // ########### 对比人脸 ##############
 
@@ -329,7 +337,16 @@ void detRtsp(char *embeddingPath, const string &url) {
 
                     rectangle(img1, Rect(box.x, box.y, box.width, box.height), Scalar(255, 0, 0));
 
-                    cout << "score:" << score
+                    /* string outpath;
+                     outpath.append("./");
+                     outpath.append(users[index].name);
+                     outpath.append("-");
+                     outpath.append(to_string(score));
+                     outpath.append(".jpg");
+                     imwrite(outpath, img1, IMWRITE_PARAMS);*/
+
+                    cout << "[ x:" << box.x << ", y:" << box.y << ", w:" << box.width << ", h:" << box.height << " ] "
+                         << "score:" << score
                          << " ,name:" << users[index].name
                          << ",time:" << (end - start) << "ms"
                          << endl;
@@ -380,7 +397,7 @@ void embeddingToFile(const string &faceImgPath) {
 
 
     // ########### 根据文件个数开辟内存空间 ##############
-    Face::User *users = (Face::User *) malloc(len * sizeof(Face::User));
+    auto *users = (Face::User *) malloc(len * sizeof(Face::User));
     // ########### 根据文件个数开辟内存空间 ##############
 
     // ########### 设置模型参数 ##############
@@ -449,14 +466,17 @@ int main(int argc, char **argv) {
     string imgPath = argv[1];
 
     if (startsWith(imgPath, "embedding://")) {
+        // 生成 embedding.dat to imgPath
         embeddingToFile(imgPath.substr(12));
     } else if (startsWith(imgPath, "rtsp://")
                || isNum(imgPath)
                || endsWith(imgPath, ".mp4")
                || endsWith(imgPath, ".avi")) {
         const string &url = imgPath;
+        // 视频实时识别
         detRtsp(embeddingPath, url);
     } else if (endsWith(imgPath, ".jpg")) {
+        // 识别一张图片
         detImg(embeddingPath, imgPath);
     } else {
         cerr << "args can be [embedding://xxx] or [0] or [rtsp://xxxx] or [xxxxx.jpg] ." << endl;
