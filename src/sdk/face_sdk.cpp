@@ -292,14 +292,22 @@ int face_detect_and_compare(cv::Mat &src,
 
 
     cv::Mat tmp;
-    cv::resize(src, tmp, cv::Size(static_cast<int>(src.cols * scale), static_cast<int>(src.rows * scale)), 0, 0,
-               cv::INTER_CUBIC);
+    if (scale != 1) {
+        cv::resize(src, tmp, cv::Size(static_cast<int>(src.cols * scale), static_cast<int>(src.rows * scale)), 0, 0,
+                   cv::INTER_CUBIC);
+    } else {
+        tmp = src;
+    }
 
     std::vector<Face::Bbox> boxes;
-#if NCNN_VULKAN
-    ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
+
+    int64 start = CLOCK();
     sdk.mDetect->start(ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB, tmp.cols, tmp.rows), boxes);
+    int64 end = CLOCK();
+
+#ifdef FACE_SHOW_LOG
+    cout << "detect:time:" << (end - start) << endl;
+#endif
 
     auto num_face = static_cast<int32_t>(boxes.size());
 
@@ -313,8 +321,8 @@ int face_detect_and_compare(cv::Mat &src,
         box.y1 /= scale;
         box.y2 /= scale;
 
-        for (int j = 0; j < 10; j++) {
-            box.ppoint[j] /= scale;
+        for (float &j : box.ppoint) {
+            j /= scale;
         }
 
         faceBox.x = box.x1;
@@ -328,11 +336,12 @@ int face_detect_and_compare(cv::Mat &src,
 
         cv::Mat warp;
 
-//        int64 start = CLOCK();
+        start = CLOCK();
         FacePreprocess::faceAlign(src, warp, rect, box);
-//        int64 end = CLOCK();
-//        cout << "faceAlign:time:" << (end - start) << endl;
-
+        end = CLOCK();
+#ifdef FACE_SHOW_LOG
+        cout << "faceAlign:time:" << (end - start) << endl;
+#endif
         /*Face::Bbox it{};
         it.x2 = warp.cols;
         it.y2 = warp.rows;
@@ -353,8 +362,12 @@ int face_detect_and_compare(cv::Mat &src,
         // 匹配到最大相似度的序号
         int index = 0;
 
+        start = CLOCK();
         int result = face_compare(warp, users, size, index, score, threshold);
-
+        end = CLOCK();
+#ifdef FACE_SHOW_LOG
+        cout << "face_compare:time:" << (end - start) << endl;
+#endif
         if (result != FACE_SDK_STATUS_OK) {
             continue;
         }
@@ -363,9 +376,6 @@ int face_detect_and_compare(cv::Mat &src,
         scores.push_back(static_cast<float &&>(score));
         faceBoxes.push_back(faceBox);
     }
-#if NCNN_VULKAN
-    ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
     return FACE_SDK_STATUS_OK;
 }
 #ifdef __cplusplus

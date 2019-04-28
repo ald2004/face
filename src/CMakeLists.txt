@@ -13,6 +13,7 @@ add_executable(face ${PROJECT_CPP})
 
 target_link_libraries(face
         ncnn
+        ${Vulkan_LINK_LIBRARIES}
         ${OpenCV_LIBS}
         )
 

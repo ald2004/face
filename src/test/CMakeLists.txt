@@ -8,11 +8,11 @@ include_directories(
         ${NCNN_DIR}/include
         ${OpenCV_INCLUDE_DIRS}
 )
-link_directories(../libs ${NCNN_DIR}/lib ${OpenCV_DIR}/lib)
+link_directories(../libs . ${NCNN_DIR}/lib ${OpenCV_DIR}/lib)
 
 # 创建可执行文件
 #add_executable(test1 test.cpp ../detect.cpp ../recognize.cpp)
-add_executable(test1 main.cpp ../detect.cpp ../recognize.cpp)
+add_executable(test1 main.cpp)
 
 target_link_libraries(test1
         face_sdk

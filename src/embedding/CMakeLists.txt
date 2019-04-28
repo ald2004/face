@@ -14,6 +14,7 @@ add_executable(embedding ${PROJECT_CPP})
 target_link_libraries(
         embedding
         ncnn
+        ${Vulkan_LINK_LIBRARIES}
         ${OpenCV_LIBS}
 )
 

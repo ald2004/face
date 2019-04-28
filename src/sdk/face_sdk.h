@@ -6,6 +6,7 @@
 #define FACE_FACE_SDK_H
 
 #define FACE_SDK_VERSION 1.1
+#define FACE_SHOW_LOG
 
 
 #ifdef _WIN32

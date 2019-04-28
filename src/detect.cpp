@@ -33,11 +33,12 @@ namespace Face {
         Rnet.use_vulkan_compute = 1;
         Onet.use_vulkan_compute = 1;
 #endif // NCNN_VULKAN
+#if NCNN_VULKAN
+        ncnn::create_gpu_instance();
+#endif // NCNN_VULKAN
 
         Pnet.load_param_mem(DET1::param);
         Pnet.load_model(DET1::bin);
-
-
 //        Rnet.load_param(param_files[1].data());
 //        Rnet.load_model(bin_files[1].data());
         Rnet.load_param_mem(DET2::param);
@@ -394,9 +395,6 @@ namespace Face {
         img_h = img.h;
         img.substract_mean_normalize(mean_vals, norm_vals);
 
-#if NCNN_VULKAN
-        ncnn::create_gpu_instance();
-#endif // NCNN_VULKAN
 
         PNet();
         //the first stage's nms
@@ -416,9 +414,6 @@ namespace Face {
         ONet();
 
 
-#if NCNN_VULKAN
-        ncnn::destroy_gpu_instance();
-#endif // NCNN_VULKAN
 
 //        printf("thirdBbox_.size()=%zd\n", thirdBbox_.size());
         if (thirdBbox_.empty()) return;

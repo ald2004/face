@@ -215,8 +215,8 @@ void recognize(Face::Detect *mDetect,
                Face::Recognize *mRecognize,
                ldmarkmodel modelt,
                User *users,
-               int len, string
-               ip,
+               int len,
+               string ip,
                int port,
                int waitTime
 ) {

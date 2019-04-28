@@ -4,6 +4,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(OPENCV_DIR "$ENV{OPENCV_DIR}" CACHE PATH "OpenCV INSTALL PATH")
 set(NCNN_DIR "$ENV{NCNN_DIR}" CACHE PATH "NCNN INSTALL PATH")
 
+
+MACRO(status ENV)
+    message(STATUS "${ENV}")
+ENDMACRO()
 MACRO(check_env ENV)
     string(TOUPPER ${ENV} name)
     if (${name})
@@ -16,15 +20,19 @@ ENDMACRO()
 check_env(NCNN_DIR)
 
 option(OPEN_OPENMP "OpenMP ON" ON)
-option(BUILD_FACE "BUILD_FACE" ON)
-option(BUILD_EMBEDDING "BUILD_EMBEDDING" ON)
+option(BUILD_FACE "BUILD_FACE" OFF)
+option(BUILD_EMBEDDING "BUILD_EMBEDDING" OFF)
 option(BUILD_SDK "BUILD_SDK c/c++ (face_sdk.so | face_sdk.dll) " ON)
+option(BUILD_JNI "BUILD_JNI c/c++ (face_sdk_jni.so | face_sdk_jni.dll) " ON)
 option(BUILD_TEST "BUILD_TEST" ON)
 
-if(NCNN_VULKAN)
+if (NCNN_VULKAN)
     find_package(Vulkan REQUIRED)
     include_directories(${Vulkan_INCLUDE_DIR})
-endif()
+    list(APPEND Vulkan_LINK_LIBRARIES ${Vulkan_LIBRARY})
+else ()
+    set(Vulkan_LINK_LIBRARIES)
+endif ()
 
 
 # Find OpenCV, you may need to set OpenCV_DIR variable
@@ -37,22 +45,54 @@ if (OpenCV_FOUND)
     # be set, you can find the full list with descriptions
     # in the OpenCVConfig.cmake file.
     # Print some message showing some of them
-    message(STATUS "OpenCV library status:")
-    message(STATUS "    version: ${OpenCV_VERSION}")
-    message(STATUS "    libraries: ${OpenCV_LIBS}")
-    message(STATUS "    arch: ${OpenCV_ARCH}")
-    message(STATUS "    opencv dir: ${OpenCV_DIR}")
-    message(STATUS "    opencv lib path: ${OpenCV_LIB_PATH}")
-    message(STATUS "    opencv install path: ${OpenCV_INSTALL_PATH}")
-    message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
+    status("OpenCV library status:")
+    status("    version: ${OpenCV_VERSION}")
+    status("    libraries: ${OpenCV_LIBS}")
+    status("    arch: ${OpenCV_ARCH}")
+    status("    opencv dir: ${OpenCV_DIR}")
+    status("    opencv lib path: ${OpenCV_LIB_PATH}")
+    status("    opencv install path: ${OpenCV_INSTALL_PATH}")
+    status("    include path: ${OpenCV_INCLUDE_DIRS}")
 else ()
     check_env(OPENCV_DIR)
+endif ()
+
+if (BUILD_JNI)
+    find_package(jni REQUIRED)
+    if (JNI_FOUND)
+        #[[ FindJNI
+    Find JNI java libraries.
+
+    This module finds if Java is installed and determines where the include files and libraries are. It also determines what the name of the library is. The caller may set variable JAVA_HOME to specify a Java installation prefix explicitly.
+
+    This module sets the following result variables:
+
+    JNI_INCLUDE_DIRS      = the include dirs to use
+    JNI_LIBRARIES         = the libraries to use
+    JNI_FOUND             = TRUE if JNI headers and libraries were found.
+    JAVA_AWT_LIBRARY      = the path to the jawt library
+    JAVA_JVM_LIBRARY      = the path to the jvm library
+    JAVA_INCLUDE_PATH     = the include path to jni.h
+    JAVA_INCLUDE_PATH2    = the include path to jni_md.h
+    JAVA_AWT_INCLUDE_PATH = the include path to jawt.h ]]
+
+        status("JNI library status:")
+        status("    JNI_LIBRARIES: ${JNI_LIBRARIES}")
+        status("    JAVA_AWT_LIBRARY: ${JAVA_AWT_LIBRARY}")
+        status("    JAVA_JVM_LIBRARY: ${JAVA_JVM_LIBRARY}")
+        status("    JNI_INCLUDE_DIRS: ${JNI_INCLUDE_DIRS}")
+        status("    JAVA_INCLUDE_PATH: ${JAVA_INCLUDE_PATH}")
+        status("    JAVA_INCLUDE_PATH2: ${JAVA_INCLUDE_PATH2}")
+        status("    JAVA_AWT_INCLUDE_PATH: ${JAVA_AWT_INCLUDE_PATH}")
+    else ()
+        message(FATAL_ERROR "not defined environment variable:[ JAVA_HOME ]")
+    endif ()
 endif ()
 
 if (OPEN_OPENMP)
     FIND_PACKAGE(OpenMP REQUIRED)
     if (OpenMP_FOUND)
-        message(STATUS "OPENMP FOUND")
+        status("OPENMP FOUND")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
@@ -60,31 +100,58 @@ if (OPEN_OPENMP)
 endif ()
 
 
-MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
+status("operation system is ${CMAKE_SYSTEM}")
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    MESSAGE(STATUS "current platform: Linux ")
+    status("current platform: Linux ")
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    MESSAGE(STATUS "current platform: Windows")
+    status("current platform: Windows")
 elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-    MESSAGE(STATUS "current platform: FreeBSD")
+    status("current platform: FreeBSD")
 else ()
-    MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
+    status("other platform: ${CMAKE_SYSTEM_NAME}")
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+
 
 # file encoding utf-8
 IF (WIN32)
     MESSAGE(STATUS "Now is windows")
     add_compile_options("/source-charset:utf-8")
-ELSEIF (APPLE)
-    MESSAGE(STATUS "Now is Apple systens.")
-    #    add_compile_options(-std=c++11)
-    add_compile_options("-finput-charset=utf-8")
-    add_compile_options("-fexec-charset=utf-8")
-ELSEIF (UNIX)
+    add_compile_options("/Ox")
+    add_compile_options("/w")
+#    add_compile_options("/std:c++14")
+#    add_compile_options("/cgthreads8")
+    add_compile_options("/MP")
+    add_compile_options("/nologo")
+    add_compile_options("/Gm-")
+
+    add_definitions(-D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE)
+    add_definitions(-DNOMINMAX)
+ELSE ()
     MESSAGE(STATUS "Now is UNIX-like OS's. Including aPPLE os x  and CygWin")
     #    SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")
     add_compile_options("-finput-charset=utf-8")
     add_compile_options("-fexec-charset=utf-8")
+    add_compile_options("-O3")
+    #    add_definitions(-Wall -Wextra -Wno-unused-function -Wmissing-field-initializers)
+    add_definitions(-fPIC)
+    if (CMAKE_BUILD_TYPE MATCHES "(Release|RELEASE|release)")
+        if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+            add_definitions(-Ofast)
+        endif ()
+
+        add_definitions(-ffast-math)
+    endif ()
+
+    if (PI3)
+        add_definitions(-march=native)
+        add_definitions(-mfpu=neon)
+        add_definitions(-mfloat-abi=hard)
+        add_definitions(-D__ARM_NEON)
+        add_definitions(-D__ANDROID__)
+    endif ()
+    # add_definitions(-march=native)
+    add_definitions(-flto)
+    # add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
 ENDIF ()
 
 if (NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -97,10 +164,11 @@ endif ()
 if (BUILD_EMBEDDING)
     add_subdirectory(src/embedding)
 endif ()
-if (BUILD_SDK)
+if (BUILD_SDK OR BUILD_JNI)
     add_subdirectory(src/sdk)
 endif ()
 if (BUILD_TEST)
     add_subdirectory(src/test)
 endif ()
+
 
