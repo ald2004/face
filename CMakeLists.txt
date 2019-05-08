@@ -3,7 +3,7 @@ project(face)
 set(CMAKE_CXX_STANDARD 11)
 set(OPENCV_DIR "$ENV{OPENCV_DIR}" CACHE PATH "OpenCV INSTALL PATH")
 set(NCNN_DIR "$ENV{NCNN_DIR}" CACHE PATH "NCNN INSTALL PATH")
-
+set(CMAKE_INSTALL_PREFIX "$ENV{PWD}")
 
 MACRO(status ENV)
     message(STATUS "${ENV}")
@@ -171,5 +171,7 @@ if (BUILD_TEST)
     add_subdirectory(src/test)
 endif ()
 
-install(TARGETS test1
-        RUNTIME DESTINATION bin)
+install(FILES "/opt/face/imgs/embedding.dat" "/opt/face/build/src/test/test1"
+	DESTINATION bin
+	PERMISSIONS WORLD_EXECUTE
+	)
