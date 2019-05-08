@@ -171,4 +171,5 @@ if (BUILD_TEST)
     add_subdirectory(src/test)
 endif ()
 
-
+install(TARGETS test1
+        RUNTIME DESTINATION bin)
