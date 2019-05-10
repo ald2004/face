@@ -157,13 +157,45 @@ public class FaceSDK {
      *
      * @param matHandle
      */
-    public native void showMat(long matHandle);
+    public native boolean showMat(char[] frameName, long matHandle);
+
+
+    /**
+     * cv::rectangle(dst, Point(box[i].x1, box[i].y1), Point(box[i].x2, box[i].y2), Scalar(225, 0, 225));
+     *
+     * @param matHandle
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     * @param r
+     * @param g
+     * @param b
+     * @return
+     */
+    public native boolean rectangleMat(long matHandle, int x, int y, int w, int h, int r, int g, int b);
+
+
+    /**
+     * cv::putText(img, txt, cv::Point(60, 20), 0.5, 0.5, cv::Scalar(0, 0, 255));
+     *
+     * @param matHandle
+     * @param text
+     * @param x
+     * @param y
+     * @param fontFace
+     * @param fontScale
+     * @param r
+     * @param g
+     * @param b
+     * @return
+     */
+    public native boolean putTextMat(long matHandle, char[] text, int x, int y, int fontFace, double fontScale, int r, int g, int b);
 
     /**
      * 复制 Mat
-     *
      */
-    public native void cloneMat(long matHandle,long cloneMatHandle);
+    public native void cloneMat(long matHandle, long cloneMatHandle);
 
 
     /**
@@ -209,17 +241,17 @@ public class FaceSDK {
 
     static {
         InputStream inputStream = null;
-        String name = "/jni/" + NATIVE_NAME + SUFFIX;
+        String name = "/jni/"+(OS_NAME.contains("win") ? "" : "lib") + NATIVE_NAME + SUFFIX;
         try {
             inputStream = FaceSDK.class.getResource(name).openStream();
             String id = UUID.randomUUID().toString().toUpperCase().replace("-", "");
-            File temp = new File(FileUtils.getTempDirectoryPath() + File.separator + id + File.separator + name);
+            File temp = new File(FileUtils.getTempDirectoryPath() + File.separator + "face" + File.separator + id + File.separator + name);
             FileUtils.forceMkdir(temp.getParentFile());
             FileUtils.copyToFile(inputStream, temp);
             String jniLibraryPath = temp.getParentFile().getAbsolutePath();
 //            System.out.println("add library path:" + jniLibraryPath);
             addDir(jniLibraryPath);
-            temp.deleteOnExit();
+            FileUtils.forceDeleteOnExit(temp.getParentFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

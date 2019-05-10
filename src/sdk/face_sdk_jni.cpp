@@ -8,11 +8,11 @@
 #include <opencv2/opencv.hpp>
 #include <detect.h>
 #include <recognize.h>
+#include <FacePreprocess.h>
 
 #ifdef _WIN32
 
 #include <windows.h>
-#include <FacePreprocess.h>
 
 #define SLEEP(a) Sleep(a)
 #define CLOCK() clock()
@@ -40,10 +40,12 @@ struct SDK {
 
 SDK sdk{};
 
+/**
+ * show License
+ */
 void showLicense() {
     tm result_time{};
     LOCALTIME(&result_time, &sdk.licenseTime);
-
     printf("[face_sdk] license to %d-%02d-%02d %02d:%02d:%02d\n",
            result_time.tm_year + 1900,
            result_time.tm_mon + 1,
@@ -53,9 +55,132 @@ void showLicense() {
            result_time.tm_sec);
 }
 
+/**
+ * gray
+ * @param src
+ * @param dst
+ */
 void gray(cv::Mat &src, cv::Mat &dst) {
     cvtColor(src, dst, CV_BGR2GRAY);
     cvtColor(dst, dst, CV_GRAY2BGR);
+}
+
+/**
+ * jchar array to char*
+ * @param env
+ * @param frameName_
+ * @return
+ */
+char *covertJCharArrayToCharArray(JNIEnv *env, jcharArray frameName_) {
+    jchar *jframeName = env->GetCharArrayElements(frameName_, nullptr);
+    int len = env->GetArrayLength(frameName_);
+    char *frameName = (char *) malloc(static_cast<size_t>(len + 1) * sizeof(char));
+    for (int i = 0; i < len; i++) {
+        frameName[i] = static_cast<char>(jframeName[i]);
+    }
+    frameName[len] = '\0';
+    env->ReleaseCharArrayElements(frameName_, jframeName, 0);
+    return frameName;
+}
+
+/**
+ * mtcnn + facenet
+ * @param env
+ * @param src
+ * @param faceBoxes_
+ * @return
+ */
+int faceDetect_(JNIEnv *env, cv::Mat src, jobject faceBoxes_) {
+    ncnn::Mat ncnnData = ncnn::Mat::from_pixels(src.data, ncnn::Mat::PIXEL_BGR2RGB, src.cols, src.rows);
+    if (src.empty())
+        return FACE_SDK_STATUS_EMPTY_MAT_ERROR;
+
+    std::vector<Face::Bbox> box;
+
+    sdk.mDetect->start(ncnnData, box);
+
+    auto num_face = static_cast<int32_t>(box.size());
+    /* get the list class */
+    jclass cls_list = env->GetObjectClass(faceBoxes_);
+    if (cls_list == nullptr) {
+        return FACE_SDK_UNKNOWN_ERROR;
+    }
+    jclass face_box_class = env->FindClass("com/face/sdk/jni/FACE_BOX");
+    jmethodID face_box_init_method = (*env).GetMethodID(face_box_class, "<init>", "(FIIIIF[F[BIII[FF)V");
+
+    jmethodID jadd = (*env).GetMethodID(cls_list, "add", "(Ljava/lang/Object;)Z");
+
+    for (int i = 0; i < num_face; i++) {
+        FACE_BOX faceBox{};
+        faceBox.x = box[i].x1;
+        faceBox.y = box[i].y1;
+        faceBox.width = box[i].x2 - box[i].x1;
+        faceBox.height = box[i].y2 - box[i].y1;
+        faceBox.score = box[i].score;
+        faceBox.area = box[i].area;
+
+        jfloatArray farr = env->NewFloatArray(10);
+        env->SetFloatArrayRegion(farr, 0, 10, box[i].ppoint);
+
+        cv::Rect rect(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
+        cv::Mat warp;
+
+        FacePreprocess::faceAlign(src, warp, rect, box[i]);
+        cv::Point2f left(box[i].ppoint[0], box[i].ppoint[5]);
+        cv::Point2f right(box[i].ppoint[1], box[i].ppoint[6]);
+        cv::Point2f nose(box[i].ppoint[2], box[i].ppoint[7]);
+
+        float angle = FacePreprocess::calcFaceHAngle(left, right, nose);
+
+        cv::Mat dst;
+        cv::resize(warp, dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
+
+        cv::Mat tmp;
+        gray(dst, tmp);
+
+        ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB,
+                                                          tmp.cols,
+                                                          tmp.rows);
+        std::vector<float> feature;
+        sdk.mRecognize->start(resize_mat_sub, feature);
+        float embedding[128];
+        memcpy(embedding, &feature[0], sizeof(float) * 128);
+
+        jfloatArray jembedding = env->NewFloatArray(128);
+        env->SetFloatArrayRegion(jembedding, 0, 128, embedding);
+
+//        warp.data
+        int datasize = static_cast<int>(warp.total() * warp.channels());
+        jbyteArray jbyteArr = env->NewByteArray(datasize);
+        auto *_data = new jbyte[datasize];
+
+        for (int j = 0; j < datasize; j++) {
+            _data[j] = warp.data[j];
+        }
+
+        env->SetByteArrayRegion(jbyteArr, 0, datasize, _data);
+
+
+        jobject jfaceBox = (*env).NewObject(face_box_class, face_box_init_method,
+                                            faceBox.score,
+                                            faceBox.x,
+                                            faceBox.y,
+                                            faceBox.width,
+                                            faceBox.height,
+                                            faceBox.area,
+                                            farr,
+                                            jbyteArr,
+                                            warp.rows,
+                                            warp.cols,
+                                            warp.channels(),
+                                            jembedding,
+                                            angle
+        );
+        // (*env).SetFloatField(jfaceBox, jfieldID_score, faceBox.score);
+
+        (*env).CallVoidMethod(faceBoxes_, jadd, jfaceBox);
+    }
+    return FACE_SDK_STATUS_OK;
 }
 
 /*
@@ -122,6 +247,9 @@ JNIEXPORT jint JNICALL Java_com_face_sdk_jni_FaceSDK_faceModelConf
     return FACE_SDK_STATUS_OK;
 }
 
+
+
+
 /*
  * Class:     com_face_sdk_jni_FaceSDK
  * Method:    faceDetect
@@ -141,96 +269,9 @@ JNIEXPORT jint JNICALL Java_com_face_sdk_jni_FaceSDK_faceDetect___3BIILjava_util
     auto *faceImageCharDate = (unsigned char *) faceDate;
 //    Mat(int rows, int cols, int type, void* data, size_t step=AUTO_STEP);
     cv::Mat src(rows, cols, CV_8UC3, faceImageCharDate);
-
-    ncnn::Mat ncnnData = ncnn::Mat::from_pixels(faceImageCharDate, ncnn::Mat::PIXEL_BGR2RGB, cols, rows);
-
-
-    if (src.empty())
-        return FACE_SDK_STATUS_EMPTY_MAT_ERROR;
-
-    std::vector<Face::Bbox> box;
-
-    sdk.mDetect->start(ncnnData, box);
-
-    auto num_face = static_cast<int32_t>(box.size());
-    /* get the list class */
-    jclass cls_list = env->GetObjectClass(faceBoxes_);
-    if (cls_list == nullptr) {
-        return FACE_SDK_UNKNOWN_ERROR;
-    }
-    jclass face_box_class = env->FindClass("com/face/sdk/jni/FACE_BOX");
-    jmethodID face_box_init_method = (*env).GetMethodID(face_box_class, "<init>", "(FIIIIF[F[BIII[F)V");
-
-    jmethodID jadd = (*env).GetMethodID(cls_list, "add", "(Ljava/lang/Object;)Z");
-
-    for (int i = 0; i < num_face; i++) {
-        FACE_BOX faceBox{};
-        faceBox.x = box[i].x1;
-        faceBox.y = box[i].y1;
-        faceBox.width = box[i].x2 - box[i].x1;
-        faceBox.height = box[i].y2 - box[i].y1;
-        faceBox.score = box[i].score;
-        faceBox.area = box[i].area;
-
-        jfloatArray farr = env->NewFloatArray(10);
-        env->SetFloatArrayRegion(farr, 0, 10, box[i].ppoint);
-
-
-        cv::Rect rect(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
-        cv::Mat warp;
-
-        FacePreprocess::faceAlign(src, warp, rect, box[i]);
-
-        cv::Mat dst;
-        cv::resize(warp, dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
-
-        cv::Mat tmp;
-        gray(dst, tmp);
-
-        ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB,
-                                                          tmp.cols,
-                                                          tmp.rows);
-        std::vector<float> feature;
-        sdk.mRecognize->start(resize_mat_sub, feature);
-        float embedding[128];
-        memcpy(embedding, &feature[0], sizeof(float) * 128);
-
-        jfloatArray jembedding = env->NewFloatArray(128);
-        env->SetFloatArrayRegion(jembedding, 0, 128, embedding);
-
-//        warp.data
-        int datasize = warp.total() * warp.channels();
-        jbyteArray jbyteArr = env->NewByteArray(datasize);
-        jbyte *_data = new jbyte[datasize];
-
-        for (int j = 0; j < datasize; j++) {
-            _data[j] = warp.data[j];
-        }
-
-        env->SetByteArrayRegion(jbyteArr, 0, datasize, _data);
-
-
-        jobject jfaceBox = (*env).NewObject(face_box_class, face_box_init_method,
-                                            faceBox.score,
-                                            faceBox.x,
-                                            faceBox.y,
-                                            faceBox.width,
-                                            faceBox.height,
-                                            faceBox.area,
-                                            farr,
-                                            jbyteArr,
-                                            warp.rows,
-                                            warp.cols,
-                                            warp.channels(),
-                                            jembedding
-        );
-        // (*env).SetFloatField(jfaceBox, jfieldID_score, faceBox.score);
-
-        (*env).CallVoidMethod(faceBoxes_, jadd, jfaceBox);
-    }
-
+    int result = faceDetect_(env, src, faceBoxes_);
     env->ReleaseByteArrayElements(faceDate_, faceDate, 0);
-    return FACE_SDK_STATUS_OK;
+    return result;
 }
 
 
@@ -286,14 +327,60 @@ JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_isVideoOpened
     return (jboolean) videoCapture.isOpened();
 }
 
+
 /*
  * Class:     com_face_sdk_jni_FaceSDK
  * Method:    showMat
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_face_sdk_jni_FaceSDK_showMat
-        (JNIEnv *, jobject, jlong matHandle) {
-    cv::imshow(std::to_string(matHandle), *(cv::Mat *) matHandle);
+JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_showMat
+        (JNIEnv *env, jobject, jcharArray frameName_, jlong matHandle) {
+    cv::Mat mat = *(cv::Mat *) matHandle;
+
+    if (!mat.empty()) {
+        char *frameName = covertJCharArrayToCharArray(env, frameName_);
+        cv::imshow(frameName, mat);
+        return static_cast<jboolean>(true);
+    }
+    return static_cast<jboolean>(false);
+}
+
+
+/*
+ * Class:     com_face_sdk_jni_FaceSDK
+ * Method:    rectangleMat
+ * Signature: (JIIIIIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_rectangleMat
+        (JNIEnv *env, jobject, jlong matHandle, jint x, jint y, jint w, jint h, jint r, jint g, jint b) {
+    cv::Mat mat = *(cv::Mat *) matHandle;
+
+    if (!mat.empty()) {
+        if (x + w > mat.cols || y + h > mat.rows) return (jboolean) false;
+        cv::rectangle(mat, cv::Point(x, y), cv::Point(x + w, y + h), cv::Scalar(b, g, r));
+        return (jboolean) true;
+    }
+    return (jboolean) false;
+}
+
+/*
+ * Class:     com_face_sdk_jni_FaceSDK
+ * Method:    putTextMat
+ * Signature: (J[CIIDDIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_putTextMat
+        (JNIEnv *env, jobject, jlong matHandle, jcharArray txt_, jint x, jint y, jint fontFace, jdouble fontScale,
+         jint r, jint g, jint b) {
+
+    cv::Mat mat = *(cv::Mat *) matHandle;
+
+    if (!mat.empty()) {
+        if (x > mat.cols || y > mat.rows) return (jboolean) false;
+        char *txt = covertJCharArrayToCharArray(env, txt_);
+        cv::putText(mat, txt, cv::Point(x, y), fontFace, fontScale, cv::Scalar(b, g, r));
+        return (jboolean) true;
+    }
+    return (jboolean) false;
 }
 
 /*
@@ -421,6 +508,7 @@ JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_writeMat
 }
 
 
+
 /*
  * Class:     com_face_sdk_jni_FaceSDK
  * Method:    faceDetect
@@ -434,89 +522,5 @@ JNIEXPORT jint JNICALL Java_com_face_sdk_jni_FaceSDK_faceDetect__JLjava_util_Arr
         return FACE_SDK_STATUS_NOT_INIT_ERROR;
 
     cv::Mat src = *(cv::Mat *) handle;
-    ncnn::Mat ncnnData = ncnn::Mat::from_pixels(src.data, ncnn::Mat::PIXEL_BGR2RGB, src.cols, src.rows);
-    if (src.empty())
-        return FACE_SDK_STATUS_EMPTY_MAT_ERROR;
-
-    std::vector<Face::Bbox> box;
-
-    sdk.mDetect->start(ncnnData, box);
-
-    auto num_face = static_cast<int32_t>(box.size());
-    /* get the list class */
-    jclass cls_list = env->GetObjectClass(faceBoxes_);
-    if (cls_list == nullptr) {
-        return FACE_SDK_UNKNOWN_ERROR;
-    }
-    jclass face_box_class = env->FindClass("com/face/sdk/jni/FACE_BOX");
-    jmethodID face_box_init_method = (*env).GetMethodID(face_box_class, "<init>", "(FIIIIF[F[BIII[F)V");
-
-    jmethodID jadd = (*env).GetMethodID(cls_list, "add", "(Ljava/lang/Object;)Z");
-
-    for (int i = 0; i < num_face; i++) {
-        FACE_BOX faceBox{};
-        faceBox.x = box[i].x1;
-        faceBox.y = box[i].y1;
-        faceBox.width = box[i].x2 - box[i].x1;
-        faceBox.height = box[i].y2 - box[i].y1;
-        faceBox.score = box[i].score;
-        faceBox.area = box[i].area;
-
-        jfloatArray farr = env->NewFloatArray(10);
-        env->SetFloatArrayRegion(farr, 0, 10, box[i].ppoint);
-
-        cv::Rect rect(box[i].x1, box[i].y1, box[i].x2 - box[i].x1, box[i].y2 - box[i].y1);
-        cv::Mat warp;
-
-        FacePreprocess::faceAlign(src, warp, rect, box[i]);
-
-        cv::Mat dst;
-        cv::resize(warp, dst, FacePreprocess::DST_SIZE, 0, 0, cv::INTER_CUBIC);
-
-        cv::Mat tmp;
-        gray(dst, tmp);
-
-        ncnn::Mat resize_mat_sub = ncnn::Mat::from_pixels(tmp.data, ncnn::Mat::PIXEL_BGR2RGB,
-                                                          tmp.cols,
-                                                          tmp.rows);
-        std::vector<float> feature;
-        sdk.mRecognize->start(resize_mat_sub, feature);
-        float embedding[128];
-        memcpy(embedding, &feature[0], sizeof(float) * 128);
-
-        jfloatArray jembedding = env->NewFloatArray(128);
-        env->SetFloatArrayRegion(jembedding, 0, 128, embedding);
-
-//        warp.data
-        int datasize = warp.total() * warp.channels();
-        jbyteArray jbyteArr = env->NewByteArray(datasize);
-        jbyte *_data = new jbyte[datasize];
-
-        for (int j = 0; j < datasize; j++) {
-            _data[j] = warp.data[j];
-        }
-
-        env->SetByteArrayRegion(jbyteArr, 0, datasize, _data);
-
-
-        jobject jfaceBox = (*env).NewObject(face_box_class, face_box_init_method,
-                                            faceBox.score,
-                                            faceBox.x,
-                                            faceBox.y,
-                                            faceBox.width,
-                                            faceBox.height,
-                                            faceBox.area,
-                                            farr,
-                                            jbyteArr,
-                                            warp.rows,
-                                            warp.cols,
-                                            warp.channels(),
-                                            jembedding
-        );
-        // (*env).SetFloatField(jfaceBox, jfieldID_score, faceBox.score);
-
-        (*env).CallVoidMethod(faceBoxes_, jadd, jfaceBox);
-    }
-
-    return FACE_SDK_STATUS_OK;
+    return faceDetect_(env, src, faceBoxes_);
 }

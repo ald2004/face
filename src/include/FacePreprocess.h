@@ -240,9 +240,9 @@ namespace FacePreprocess {
 
     float calcFaceHAngle(const Point2f &left, const Point2d &right, const Point2d &nose) {
         float angle = -calcRotationAngle(left, right);
-        Point2f l = calcRotationPoint(left, angle);
-        Point2f r = calcRotationPoint(right, angle);
-        Point2f n = calcRotationPoint(nose, angle);
+        Point2f l = calcRotationPoint(left, nose, angle);
+        Point2f r = calcRotationPoint(right, nose, angle);
+        Point2f n = calcRotationPoint(nose, nose, angle);
 
         double lr_w = abs(l.x - r.x);
         double ln_w = abs(l.x - n.x);
@@ -252,9 +252,7 @@ namespace FacePreprocess {
 //        cout << "ln_w:" << ln_w << endl;
 //        cout << "rn_w:" << rn_w << endl;
 
-        auto leftA = static_cast<float>(ln_w / lr_w) * 180 - 90;
-
-        return leftA;
+        return (std::max)(0.0, (std::min)(1.0, (ln_w / lr_w))) * 180 - 90;
     }
 
     float calcFaceDefinition(const Mat &src) {

@@ -122,10 +122,26 @@ JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_writeMat
 /*
  * Class:     com_face_sdk_jni_FaceSDK
  * Method:    showMat
- * Signature: (J)V
+ * Signature: ([CJ)Z
  */
-JNIEXPORT void JNICALL Java_com_face_sdk_jni_FaceSDK_showMat
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_showMat
+  (JNIEnv *, jobject, jcharArray, jlong);
+
+/*
+ * Class:     com_face_sdk_jni_FaceSDK
+ * Method:    rectangleMat
+ * Signature: (JIIIIIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_rectangleMat
+  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     com_face_sdk_jni_FaceSDK
+ * Method:    putTextMat
+ * Signature: (J[CIIDDIII)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_putTextMat
+  (JNIEnv *, jobject, jlong, jcharArray, jint, jint, jint, jdouble, jint, jint, jint);
 
 /*
  * Class:     com_face_sdk_jni_FaceSDK
