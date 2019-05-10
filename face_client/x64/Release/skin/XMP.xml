@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<Window size="968,600" sizebox="4,4,4,4" caption="0,0,0,40" mininfo="600,400">
+  <Font name="微软雅黑" size="14" bold="false" italic="false" />
+  <Font name="微软雅黑" size="14" bold="true" italic="false" />
+  <Font name="微软雅黑" size="10" bold="false" />
+  <Font name="微软雅黑" size="12" bold="false" />
+  <Font name="微软雅黑" size="13" bold="false" />
+  <Font name="微软雅黑" size="14" bold="false" />
+  <Include source="scrollbar.xml" />
+  <VerticalLayout bkcolor="#FF070707">
+    <Caption height="30" />
+    <HorizontalLayout height="40" name="tabbar" bkcolor="#FF070707" inset="10,0,0,0">
+      <Option name="tabReal" text="实时视频" width="88" height="38" textcolor="#FFB7DBFB" disabledtextcolor="#FFA7A6AA" font="1" align="center" hottextcolor="#FF084DC8" group="tabbar" selected="true" selectedimage="light_top.png" />
+      <!--<Option name="tabRecord" text="录像" width="88" height="38" textcolor="#FFB7DBFB" disabledtextcolor="#FFA7A6AA" font="1" align="center" hottextcolor="#FF084DC8" group="tabbar" selected="false" selectedimage="light_top.png" />
+      <Button name="tabMap" text="地图" width="88" height="38" textcolor="#FFB7DBFB" disabledtextcolor="#FFA7A6AA" font="1" align="center" hottextcolor="#FF084DC8" group="tabbar" selected="false" selectedimage="light_top.png" />
+      <Button name="tabData" text="数据统计" width="88" height="38" textcolor="#FFB7DBFB" disabledtextcolor="#FFA7A6AA" font="1" align="center" hottextcolor="#FF084DC8" group="tabbar" selected="false" selectedimage="light_top.png" />
+      <Button name="tabSetting" text="系统设置" width="88" height="38" textcolor="#FFB7DBFB" disabledtextcolor="#FFA7A6AA" font="1" align="center" hottextcolor="#FF084DC8" group="tabbar" selected="false" selectedimage="light_top.png" />-->
+    </HorizontalLayout>
+
+    <HorizontalLayout name="ctnClient">
+      <VerticalLayout width="180" bkcolor="#FF111111">
+        <HorizontalLayout height="33">
+          <Button name="listHeader" text="摄像机列表" textpadding="10,0,0,0" font="6" align="left" valign="vcenter" height="33" bkimage="treeview_header.png" textcolor="#FFC8C6CB" />
+        </HorizontalLayout>
+        <TreeView name="listView" childpadding="4" multipleitem="true" inset="4,0,3,0" bordersize="1" bordercolor="#FF2B2B2B" itemtextcolor="#FFC8C6CB" itemhottextcolor="#FFC8C6CB" selitemtextcolor="#FFC8C6CB" itemhotbkcolor="#FF1B1B1B" itemselectedbkcolor="#FF151C2C" vscrollbar="true" hscrollbar="true" >
+          <TreeNode text="装工院" name="parent" inset="0,0,0,0" height="22" itemattr="valign=&quot;vcenter&quot; font=&quot;0&quot; textpadding=&quot;4,0,0,0&quot;" folderattr="padding=&quot;0,5,0,0&quot; width=&quot;12&quot; height=&quot;12&quot; selectedimage=&quot;file='treeview_expand.png' source='0,0,12,12' &quot; normalimage=&quot;file='treeview_expand.png' source='13,0,25,12' &quot;">
+            <!--<TreeNode text="入口" name="node100" userdata="rtsp://admin:111111ab@192.168.100.251:554" height="30" with="50" inset="7,0,0,0" itemattr="valign=&quot;vcenter&quot; font=&quot;4&quot;" folderattr="width=&quot;0&quot; float=&quot;true&quot;"/>-->
+          </TreeNode>
+        </TreeView>
+      </VerticalLayout>
+      <VerticalLayout align="center" inset="0,0,0,0">
+        
+        <HorizontalLayout align="center" height="250">
+        <PlayerLayout  name="playerLayout" visible="true" inset="0,0,0,0"  />
+        </HorizontalLayout>
+        
+        <Label name="labelWhite" text="    白名单" height="20" bkimage="label_whitelist.png" font="5" textcolor="#FF85909F" align="left"/>
+        <HorizontalLayout name="whiteList"  align="center"  visible="true"  inset="0,0,0,0">
+          <Label name="w5" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom" />
+          <Label name="w4" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom" />
+          <Label name="w3" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom" />
+          <Label name="w2" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom" />
+          <Label name="w1" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom" />
+          <Label name="w0" text="xxxx" bkimage="label_bkimg.jpg" font="4"  textcolor="#00FFFBF0" align="center"  valign="bottom" />
+        </HorizontalLayout>
+        
+        <Label name="labelBlcak" text="    陌生人" bkimage="label_bkimg.jpg" font="5"    textcolor="#FF85909F" align="left"/>
+        <HorizontalLayout name="blackList"  align="center"  bordercolor="#FFFF0000"  visible="true" inset="0,0,0,0" >
+          <Label name="b5" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="b4" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="b3" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="b2" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="b1" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="b0" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+        </HorizontalLayout>
+        
+        <Label name="labelBlack" text="    黑名单" bkimage="label_bkimg.jpg" font="5"    textcolor="#FF85909F" align="left"/>
+        <HorizontalLayout name="blacksList"  align="center"  bordercolor="#FFFF0000"  visible="true" inset="0,0,0,0" >
+          <Label name="bl5" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="bl4" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="bl3" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="bl2" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="bl1" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+          <Label name="bl0" text="xxxx" bkimage="label_bkimg.jpg" font="4"    textcolor="#00FFFBF0" align="center"  valign="bottom"/>
+        </HorizontalLayout>
+        <HorizontalLayout name="recordBar" visible="true" height="1" inset="0,0,0,0" >
+          <HorizontalLayout inset="0,0,0,0" >
+            <Label name="labelPlayTime" text="--:--" font="2" width="100" height="1" textcolor="#FF85909F" align="center" />
+            <Slider name="sliderPlay" height="2" bkimage="slider\SliderBack.png" foreimage="slider\SliderFore.png" min="0" max="1000" value="0" hor="true"  thumbhotimage="file=&apos;slider\SliderBar.png&apos; source=&apos;21,0,41,20&apos;" thumbpushedimage="file=&apos;slider\SliderBar.png&apos; source=&apos;42,0,62,20&apos;" thumbsize="20,20" />
+          </HorizontalLayout>
+          <Slider name="sliderVol" width="85" height="0" min="0" max="100" padding="0,14" value="60" bkimage="slider\SliderBackVolume.png" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" foreimage="slider\SliderForeVolume.png" hor="true" thumbimage="file=&apos;slider\SliderBar.png&apos; source=&apos;0,0,20,20&apos; " thumbhotimage="file=&apos;slider\SliderBar.png&apos; source=&apos;21,0,41,20&apos;" thumbpushedimage="file=&apos;slider\SliderBar.png&apos; source=&apos;42,0,62,20&apos;" thumbsize="20,20" />
+        </HorizontalLayout>
+      </VerticalLayout>
+    </HorizontalLayout>
+    <HorizontalLayout height="40" inset="10,0,10,0" bkcolor="#FF0E1A2F" bkcolor2="#FF060606" >
+      <HorizontalLayout width="24" inset="0,11,0,0">
+        <Button name="btnScreenFull" tooltip="全屏" enabled="true" width="24" height="18" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" normalimage="file=&apos;btn_screen_full.png&apos; source=&apos;0,0,24,18&apos;" hotimage="file=&apos;btn_screen_full.png&apos; source=&apos;25,0,49,18&apos;" pushedimage="file=&apos;btn_screen_full.png&apos; source=&apos;50,0,74,18&apos;" disabledimage="file=&apos;btn_screen_full.png&apos; source=&apos;75,0,99,18&apos;" />
+        <Button name="btnScreenNormal" tooltip="退出全屏" visible="true" width="24" height="18" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" normalimage="file=&apos;btn_screen_normal.png&apos; source=&apos;0,0,24,18&apos;" hotimage="file=&apos;btn_screen_normal.png&apos; source=&apos;25,0,49,18&apos;" pushedimage="file=&apos;btn_screen_normal.png&apos; source=&apos;50,0,74,18&apos;" disabledimage="file=&apos;btn_screen_normal.png&apos; source=&apos;75,0,99,18&apos;" />
+      </HorizontalLayout>
+    </HorizontalLayout>
+  </VerticalLayout>
+</Window>

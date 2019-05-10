@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+face:
+  job:
+    base-path: imgs/face/job
+    jar:
+      filepath: /data/face-sdk-1.0-SNAPSHOT.jar
+      filename: face-sdk-1.0-SNAPSHOT.jar
+
+  base-path: imgs/
