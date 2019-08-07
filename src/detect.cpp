@@ -29,9 +29,9 @@ namespace Face {
 //        Pnet.load_model(bin_files[0].data());
 
 #if NCNN_VULKAN
-        Pnet.use_vulkan_compute = 1;
-        Rnet.use_vulkan_compute = 1;
-        Onet.use_vulkan_compute = 1;
+        Pnet.opt.use_vulkan_compute = 1;
+        Rnet.opt.use_vulkan_compute = 1;
+        Onet.opt.use_vulkan_compute = 1;
 #endif // NCNN_VULKAN
 #if NCNN_VULKAN
         ncnn::create_gpu_instance();

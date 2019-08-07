@@ -257,7 +257,7 @@ namespace FacePreprocess {
 
     float calcFaceDefinition(const Mat &src) {
         Mat imageGrey;
-        cvtColor(src, imageGrey, CV_RGB2GRAY);
+        cvtColor(src, imageGrey, COLOR_RGB2GRAY);
         Mat imageSobel;
         Sobel(imageGrey, imageSobel, CV_16U, 1, 1);
         double meanValue = mean(imageSobel)[0];

@@ -3,7 +3,7 @@
 #include头文件目录
 include_directories(
         ../include
-        ${NCNN_DIR}/include
+        ${NCNN_DIR}/include/ncnn
         ${OPENCV_INCLUDE}
 )
 

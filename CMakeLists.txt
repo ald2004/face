@@ -57,9 +57,29 @@ else ()
     check_env(OPENCV_DIR)
 endif ()
 
+# 通过 JAVA_HOME环境变量定位 jni.h和jni_md.h
+if(NOT DEFINED ENV{JAVA_HOME})
+    # 没有找到JAVA_HOME环境变量，输出错误信息退出
+    message(FATAL_ERROR "not defined environment variable:JAVA_HOME")  
+endif()
+set(JNI_INCLUDE "$ENV{JAVA_HOME}/include")
+include_directories(${JNI_INCLUDE})
+IF(WIN32)
+    #win32系统下`jni_md.h`位于`<jni_h_dir>/win32`下
+    include_directories("${JNI_INCLUDE}/win32")
+elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    #linux系统下`jni_md.h`位于`<jni_h_dir>/linux`下
+    include_directories("${JNI_INCLUDE}/linux")
+else()
+    # 不支持的操作系统报错退出
+    message(FATAL_ERROR "other unsupported platform: ${CMAKE_SYSTEM_NAME}")  
+endif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+
 if (BUILD_JNI)
-    find_package(jni REQUIRED)
+    find_package(JNI REQUIRED)
     if (JNI_FOUND)
+        include_directories(${JAVA_INCLUDE_PATH})
+        include_directories(${JAVA_INCLUDE_PATH2})
     else ()
         find_package(JNI REQUIRED)
     endif ()

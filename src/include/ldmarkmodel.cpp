@@ -97,9 +97,9 @@ int ldmarkmodel::track(const cv::Mat &src, cv::Mat &current_shape) {
     if (src.channels() == 1) {
         grayImage = src;
     } else if (src.channels() == 3) {
-        cv::cvtColor(src, grayImage, CV_BGR2GRAY);
+        cv::cvtColor(src, grayImage, cv::COLOR_BGR2GRAY);
     } else if (src.channels() == 4) {
-        cv::cvtColor(src, grayImage, CV_RGBA2GRAY);
+        cv::cvtColor(src, grayImage, cv::COLOR_RGBA2GRAY);
     } else {
         return SDM_ERROR_IMAGE;
     }

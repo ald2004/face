@@ -22,7 +22,7 @@ namespace Face {
 #endif // NCNN_VULKAN
 
 #if NCNN_VULKAN
-        Recognet.use_vulkan_compute = 1;
+        Recognet.opt.use_vulkan_compute = 1;
 #endif // NCNN_VULKAN
         Recognet.load_param_mem(RECOGNITION::param);
         Recognet.load_model(RECOGNITION::bin);

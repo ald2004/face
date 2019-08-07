@@ -61,8 +61,8 @@ void showLicense() {
  * @param dst
  */
 void gray(cv::Mat &src, cv::Mat &dst) {
-    cvtColor(src, dst, CV_BGR2GRAY);
-    cvtColor(dst, dst, CV_GRAY2BGR);
+    cvtColor(src, dst, cv::COLOR_BGR2GRAY);
+    cvtColor(dst, dst, cv::COLOR_GRAY2BGR);
 }
 
 /**
@@ -493,7 +493,7 @@ JNIEXPORT jlong JNICALL Java_com_face_sdk_jni_FaceSDK_read
  */
 JNIEXPORT jboolean JNICALL Java_com_face_sdk_jni_FaceSDK_writeMat
         (JNIEnv *env, jobject, jlong matHandle, jcharArray savePath_) {
-    std::vector<int> IMWRITE_PARAMS = {CV_IMWRITE_JPEG_QUALITY, 100};
+    std::vector<int> IMWRITE_PARAMS = {cv::IMWRITE_JPEG_QUALITY, 100};
     auto *frame = (cv::Mat *) matHandle;
     jchar *jsavePath = env->GetCharArrayElements(savePath_, nullptr);
     int len = env->GetArrayLength(savePath_);

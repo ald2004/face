@@ -53,8 +53,8 @@ struct SDK {
     }
 
     void gray(cv::Mat &src, cv::Mat &dst) {
-        cvtColor(src, dst, CV_BGR2GRAY);
-        cvtColor(dst, dst, CV_GRAY2BGR);
+        cvtColor(src, dst, cv::COLOR_BGR2GRAY);
+        cvtColor(dst, dst, cv::COLOR_GRAY2BGR);
     }
 };
 

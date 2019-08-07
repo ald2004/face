@@ -36,7 +36,7 @@
 
 using namespace cv;
 using namespace std;
-std::vector<int> IMWRITE_PARAMS = {CV_IMWRITE_JPEG_QUALITY, 100};
+std::vector<int> IMWRITE_PARAMS = {cv::IMWRITE_JPEG_QUALITY, 100};
 
 bool isNum(string str) {
     stringstream sin(str);
