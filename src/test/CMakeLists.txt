@@ -5,7 +5,7 @@ include_directories(
         ../include
         include
         ../sdk
-        ${NCNN_DIR}/include
+        ${NCNN_DIR}/include/ncnn
         ${OpenCV_INCLUDE_DIRS}
 )
 link_directories(../libs . ${NCNN_DIR}/lib ${OpenCV_DIR}/lib)
