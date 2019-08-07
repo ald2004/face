@@ -5,3 +5,5 @@
 /src/libs/*.dll
 /src/libs/*.so
 /imgs/*.jpg
+build/*
+face_client/x64/*
