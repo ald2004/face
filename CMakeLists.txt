@@ -25,6 +25,7 @@ option(BUILD_EMBEDDING "BUILD_EMBEDDING" OFF)
 option(BUILD_SDK "BUILD_SDK c/c++ (face_sdk.so | face_sdk.dll) " ON)
 option(BUILD_JNI "BUILD_JNI c/c++ (face_sdk_jni.so | face_sdk_jni.dll) " ON)
 option(BUILD_TEST "BUILD_TEST" ON)
+option(NCNN_VULKAN "NCNN_VULKAN" ON)
 
 if (NCNN_VULKAN)
     find_package(Vulkan REQUIRED)
