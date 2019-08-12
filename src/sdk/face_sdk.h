@@ -141,7 +141,8 @@ face_detect_and_compare(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes, Face::Us
                         std::vector<int> &indexes, std::vector<float> &scores,
                         float threshold = 0.55,
                         double scale = 1);
-
+FACE_SDK_DLL_EXP void
+unload_sdk();
 #ifdef __cplusplus
 }
 #endif

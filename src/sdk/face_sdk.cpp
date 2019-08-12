@@ -63,6 +63,11 @@ SDK sdk{};
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void unload_sdk() {
+	ncnn::destroy_gpu_instance();
+}
+
 int face_model_init(/*char *ldmarkmodelPath,*/ int threadNum) {
     sdk.showLicense();
     CHECK_LICENSE();
