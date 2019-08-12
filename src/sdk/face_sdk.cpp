@@ -227,7 +227,10 @@ int face_detect(cv::Mat &src, std::vector<FACE_BOX> &faceBoxes) {
 }
 int face_compare(cv::Mat &src, Face::User *users, int size, int &index, double &score, float threshold) {
     CHECK_LICENSE();
+#ifdef FACE_SHOW_LOG
+	cout << "face_compare:input:size is : " << size << endl;
 
+#endif
     if (!sdk.inited)
         return FACE_SDK_STATUS_NOT_INIT_ERROR;
 
