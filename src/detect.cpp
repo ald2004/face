@@ -56,6 +56,17 @@ namespace Face {
     }
 
     Detect::Detect(const std::vector<std::string> param_files, const std::vector<std::string> bin_files) {
+#if NCNN_VULKAN
+		Pnet.opt.use_vulkan_compute = 1;
+		Rnet.opt.use_vulkan_compute = 1;
+		Onet.opt.use_vulkan_compute = 1;
+		Pnet.set_vulkan_device(0);
+		Rnet.set_vulkan_device(0);
+		Onet.set_vulkan_device(0);
+#endif // NCNN_VULKAN
+#if NCNN_VULKAN
+		ncnn::create_gpu_instance();
+#endif // NCNN_VULKAN
         Pnet.load_param(param_files[0].data());
         Pnet.load_model(bin_files[0].data());
         Rnet.load_param(param_files[1].data());
@@ -69,6 +80,10 @@ namespace Face {
         Pnet.clear();
         Rnet.clear();
         Onet.clear();
+#if NCNN_VULKAN
+		ncnn::destroy_gpu_instance();
+#endif // NCNN_VULKAN
+		
     }
 
     void Detect::SetMinFace(int minSize) {
