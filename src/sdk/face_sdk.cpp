@@ -268,6 +268,10 @@ int face_compare(cv::Mat &src, Face::User *users, int size, int &index, double &
     } else {
         index = -1;
         score = -1;
+#ifdef FACE_SHOW_LOG
+		cout << "score < threshold : " << size << endl;
+
+#endif
         return FACE_SDK_STATUS_NOT_IN_USER;
     }
 
@@ -373,16 +377,11 @@ int face_detect_and_compare(cv::Mat &src,
 #ifdef FACE_SHOW_LOG
         cout << "face_compare:time:" << (end - start) << endl;
 #endif
-        if (result != FACE_SDK_STATUS_OK) {
-#ifdef FACE_SHOW_LOG
-			cout << "result != FACE_SDK_STATUS_OK " << result << endl;
-#endif
-            continue;
-        }
+        if (result != FACE_SDK_STATUS_OK) continue;
 
         indexes.push_back(index);
-        //scores.push_back(static_cast<float &&>(score));
-		scores.push_back(score);
+        scores.push_back(static_cast<float>(score));
+		//scores.push_back(score);
         faceBoxes.push_back(faceBox);
     }
     return FACE_SDK_STATUS_OK;

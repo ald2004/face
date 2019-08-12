@@ -32,6 +32,9 @@ namespace Face {
         Pnet.opt.use_vulkan_compute = 1;
         Rnet.opt.use_vulkan_compute = 1;
         Onet.opt.use_vulkan_compute = 1;
+		Pnet.set_vulkan_device(0);
+		Rnet.set_vulkan_device(0);
+		Onet.set_vulkan_device(0);
 #endif // NCNN_VULKAN
 #if NCNN_VULKAN
         ncnn::create_gpu_instance();
