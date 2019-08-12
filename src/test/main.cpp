@@ -604,7 +604,7 @@ int main(int argc, char **argv) {
     }
 
     string imgPath = argv[1];
-
+	 
     if (startsWith(imgPath, "embedding://")) {
         // 生成 embedding.dat to imgPath
         embeddingToFile(imgPath.substr(12));
@@ -617,7 +617,15 @@ int main(int argc, char **argv) {
         detRtsp(embeddingPath, url);
     } else if (endsWith(imgPath, ".jpg")) {
         // 识别一张图片
-        detImg(embeddingPath, imgPath);
+		std::ifstream infile(imgPath);
+		if (infile.good()) {
+			detImg(embeddingPath, imgPath);
+		}
+		else {
+			cerr << "embedding file " << embeddingPath << "does not exists." << endl;
+			return -1;
+		}
+			
     } else {
         cerr << "args can be [embedding://xxx] or [0] or [rtsp://xxxx] or [xxxxx.jpg] ." << endl;
         return -1;
