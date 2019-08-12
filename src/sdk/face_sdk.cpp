@@ -26,7 +26,7 @@
 #endif
 
 #define CHECK_LICENSE() if (sdk.licenseTime <= time(nullptr)) return FACE_SDK_STATUS_LICENSE_ERROR;
-
+//#define CHECK_LICENSE() if (sdk.licenseTime <= time(nullptr)) return 0;
 struct SDK {
     Face::Detect *mDetect;
     Face::Recognize *mRecognize;
@@ -37,7 +37,7 @@ struct SDK {
     float threshold[3] = {0.9f, 0.9f, 0.99f};
     int minFaceSize = 60;
     // 授权到期时间
-    time_t licenseTime = 1558000000;
+    time_t licenseTime = 1700000000;
 
     void showLicense() {
         tm result_time{};
@@ -307,12 +307,14 @@ int face_detect_and_compare(cv::Mat &src,
 
 #ifdef FACE_SHOW_LOG
     cout << "detect:time:" << (end - start) << endl;
+	cout << "total faces: " << boxes.size() << endl;
 #endif
 
     auto num_face = static_cast<int32_t>(boxes.size());
 
+
 //#pragma omp parallel for
-    for (int i = 0; i < num_face; i++) {
+    for (int i = 0; i < num_face && i < 100; i++) {
         FACE_BOX faceBox{};
         Face::Bbox box = boxes[i];
 
@@ -369,11 +371,15 @@ int face_detect_and_compare(cv::Mat &src,
         cout << "face_compare:time:" << (end - start) << endl;
 #endif
         if (result != FACE_SDK_STATUS_OK) {
+#ifdef FACE_SHOW_LOG
+			cout << "result != FACE_SDK_STATUS_OK " << result << endl;
+#endif
             continue;
         }
 
         indexes.push_back(index);
-        scores.push_back(static_cast<float &&>(score));
+        //scores.push_back(static_cast<float &&>(score));
+		scores.push_back(score);
         faceBoxes.push_back(faceBox);
     }
     return FACE_SDK_STATUS_OK;

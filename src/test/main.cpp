@@ -343,11 +343,12 @@ void detImg(char *embeddingPath, const string &imgPath) {
             cout << "not found." << endl;
         }
 
-        imshow("img1", img1);
+        //imshow("img1", img1);
+		//imwrite("./test.jpg", img1);
     } catch (const std::exception &e) {
         cerr << e.what() << endl;
     }
-    waitKey();
+    //waitKey();
 }
 
 int fps() {
@@ -503,9 +504,9 @@ void detRtsp(char *embeddingPath, const string &url) {
             // ########### 显示FPS ##############
             // ########### 显示图片 ##############
 
-            imshow("img1", img1);
-            if ((cv::waitKey(2) & 0xEFFFFF) == 27)//esc 退出
-                stop = true;
+            //imshow("img1", img1);
+            //if ((cv::waitKey(2) & 0xEFFFFF) == 27)//esc 退出
+            //    stop = true;
             // ########### 显示图片 ##############
         }
 
