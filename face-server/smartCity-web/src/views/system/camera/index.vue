@@ -1,0 +1,112 @@
+<template>
+  <div class="app-container">
+    <eHeader :roles="roles" :query="query"/>
+    <!--表格渲染-->
+    <el-table v-loading="loading" element-loading-text="拼命加载中" :data="data" size="small" border style="width: 100%;">
+      
+      <el-table-column prop="number" label="编号"/>
+      <el-table-column prop="region" label="区域"/>
+      <el-table-column prop="ip" label="IP"/>
+      <el-table-column prop="state" label="状态"/>
+      <el-table-column prop="createTime" label="创建时间">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="150px" align="center">
+        <template slot-scope="scope">
+          <edit v-if="checkPermission(['CAMERA_ALL','CAMERA_EDIT','ADMIN'])" :data="scope.row" :roles="roles" :sup_this="sup_this"/>
+          <el-button v-else disabled  size="mini" type="success" >编辑</el-button>          
+          <el-popover
+            v-if="checkPermission(['CAMERA_ALL','CAMERA_DELETE','ADMIN'])"
+            v-model="scope.row.delPopover"
+            placement="top"
+            width="180">
+            <p>确定删除本条数据吗？</p>
+            <div style="text-align: right; margin: 0">
+              <el-button size="mini" type="text" @click="scope.row.delPopover = false">取消</el-button>
+              <el-button :loading="delLoading" type="primary" size="mini" @click="subDelete(scope.$index, scope.row)">确定</el-button>
+            </div>
+            <el-button slot="reference" type="danger" size="mini" @click="scope.row.delPopover = true">删除</el-button>
+          </el-popover>
+            <el-button v-else disabled slot="reference" type="danger" size="mini" @click="scope.row.delPopover = true">删除</el-button>
+
+        </template>
+      </el-table-column>
+    </el-table>
+    <!--分页组件-->
+    <el-pagination
+      :total="total"
+      style="margin-top: 8px;"
+      layout="total, prev, pager, next, sizes"
+      @size-change="sizeChange"
+      @current-change="pageChange"/>
+  </div>
+</template>
+
+<script>
+import checkPermission from '@/utils/permission'
+import initData from '../../../mixins/initData'
+import { del } from '@/api/camera'
+import { getRoleTree } from '@/api/role'
+import { parseTime } from '@/utils/index'
+import eHeader from './module/header'
+import edit from './module/edit'
+export default {
+  components: { eHeader, edit },
+  mixins: [initData],
+  data() {
+    return {
+      roles: [], delLoading: false, sup_this: this
+    }
+  },
+  created() {
+    this.getRoles();
+    this.$nextTick(() => {
+      this.init()
+    })
+  },
+  methods: {
+    parseTime,
+    checkPermission,
+    beforeInit() {
+      this.url = 'api/camera';
+      const sort = 'id,desc';
+      const query = this.query;
+      const type = query.type;
+      const value = query.value;
+      // const enabled = query.enabled
+      this.params = { page: this.page, size: this.size, sort: sort };
+      if (type && value) { this.params[type] = value }
+      // if (enabled !== '' && enabled !== null) { this.params['enabled'] = enabled }
+      return true
+    },
+    subDelete(index, row) {
+      this.delLoading = true;
+      del(row.id).then(res => {
+        this.delLoading = false;
+        row.delPopover = false;
+        this.init();
+        this.$notify({
+          title: '删除成功',
+          type: 'success',
+          duration: 2500
+        })
+      }).catch(err => {
+        this.delLoading = false;
+        row.delPopover = false;
+        console.log(err.response.data.message)
+      })
+    },
+    getRoles() {
+      getRoleTree().then(res => {
+        this.roles = res
+      })
+    }
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
