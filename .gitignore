@@ -10,3 +10,6 @@ face_client/x64/*
 /.vs
 /out/build/x64-Debug
 /CMakeSettings.json
+face_server_sdk.rar
+imgs/embedding.dat
+imgs/output/
