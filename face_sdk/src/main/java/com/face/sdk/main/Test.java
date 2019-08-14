@@ -22,11 +22,11 @@ public class Test {
 
     public static void main(String[] args) throws Exception {
 
-        BufferedImage image = ImageIO.read(new File("D:\\projects\\java\\face-server\\eladmin\\imgs\\face\\job\\4\\255DC840F43D415381FC2EF465AA4E3B.jpg"));
+        BufferedImage image = ImageIO.read(new File("D:\\projects\\java\\face-server\\eladmin\\imgs\\face\\job\\4\\5738BCFCD3AC4402A7EE0702724DCBE2.jpg"));
 
         Graphics2D g = (Graphics2D) image.getGraphics();
 
-        double[][] ppoints = new double[][]{{405.7119, 413.16895, 415.07373, 396.83643, 401.9834, 227.49414, 231.78027, 246.77148, 266.7461, 268.8379}};
+        double[][] ppoints = new double[][]{{1003.5657, 1034.3984, 1027.6191, 1013.1045, 1036.4844, 141.7251, 140.92114, 163.14941, 184.18262, 183.7915}};
 
         for (double[] ppoint : ppoints) {
             Point2D left = new java.awt.geom.Point2D.Double(ppoint[0], ppoint[5]);
@@ -62,9 +62,9 @@ public class Test {
         Point2D r = calcRotationPoint(right, nose, angle);
         Point2D n = calcRotationPoint(nose, nose, angle);
 
-        double lr_w = Math.abs(l.getX() - r.getX());
-        double ln_w = Math.abs(l.getX() - n.getX());
-        double rn_w = Math.abs(r.getX() - n.getX());
+        double lr_w = (l.getX() - r.getX());
+        double ln_w = (l.getX() - n.getX());
+        double rn_w = (r.getX() - n.getX());
 
 //        cout << "lr_w:" << lr_w << endl;
 //        cout << "ln_w:" << ln_w << endl;

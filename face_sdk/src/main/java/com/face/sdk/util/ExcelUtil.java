@@ -43,7 +43,7 @@ public class ExcelUtil {
 
         int firstRowIndex = sheet.getFirstRowNum() + 1;   //第一行是列名，所以不读
         int lastRowIndex = sheet.getLastRowNum();
-        //姓名    身份证    手机号    状态    图片
+        //姓名    证件号    联系方式    状态    图片    附加信息
 
         List<FaceUserEntity> faceUserEntityList = new ArrayList<>();
 
@@ -55,14 +55,16 @@ public class ExcelUtil {
                 String phone = row.getCell(2).toString().trim();
                 String statusStr = row.getCell(3).toString().trim();
                 String photo = row.getCell(4).toString().trim();
+                String des = row.getCell(5).toString().trim();
 
                 FaceUserEntity entity = new FaceUserEntity();
                 entity.setName(name);
                 entity.setIdCard(idCard);
                 entity.setPhone(phone);
                 entity.setPhoto(photo);
+                entity.setDes(des);
                 int status = 0;
-                switch (statusStr) {
+                switch (statusStr ) {
                     case "禁用":
                         status = 0;
                         break;

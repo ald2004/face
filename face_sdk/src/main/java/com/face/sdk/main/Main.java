@@ -33,6 +33,9 @@ public class Main {
     private static long time;
     // 防止重复 提交，key user id，value createTime;
     private static Map<Long, Long> duplicationMap;
+    private static int ID;
+    private static Map<Integer, TrackData> trackMap = new HashMap<>();
+
 
     // 追踪丢失超时间
     private final static long OUT_TIME = 1000;
@@ -49,7 +52,7 @@ public class Main {
     private final static double SUCCESS_SIMILAR = 0.55;
 
     // 最大可识别角度
-    private final static float MAX_ANGLE = 50;
+    private final static float MAX_ANGLE = 60;
 
     // 多张角度时 最大平均角度
     private final static double MAX_AVG_ANGLE = 65;
@@ -65,11 +68,10 @@ public class Main {
     // 确认是陌生人的时间
     private final static long UNKNOWN_TIME = 6000;
     // 确认是陌生人最少帧数
-    private final static int UNKNOWN_FACE_SIZE = 2;
+    private final static int UNKNOWN_FACE_SIZE = 0;
     // 超时删除时 确定为陌生人最少的帧数
-    private final static int REMOVE_UNKNOWN_SIZE = 2;
+    private final static int REMOVE_UNKNOWN_SIZE = 0;
     // ================ 低配 =============
-
 
    /* // ================ 中配 =============
     // 确认是陌生人的时间
@@ -80,16 +82,15 @@ public class Main {
     private final static int REMOVE_UNKNOWN_SIZE = 4;
     // ================ 中配 =============*/
 
-/*
+   /*
     // ================ 高配 =============
     // 确认是陌生人的时间
     private final static long UNKNOWN_TIME = 6000;
     // 确认是陌生人最少帧数
-    private final static int UNKNOWN_FACE_SIZE = 25;
+    private final static int UNKNOWN_FACE_SIZE = 5;
     // 超时删除时 确定为陌生人最少的帧数
     private final static int REMOVE_UNKNOWN_SIZE = 6;
     // ================ 高配 =============
-
 */
 
     public static int getProcessID() {
@@ -192,68 +193,56 @@ public class Main {
 
     }
 
-    public static void main(String[] args) throws Exception {
-        int pid = getProcessID();
-        File file = new File(pid + ".pid");
-        boolean newFile = file.createNewFile();
-        FileUtils.forceDeleteOnExit(file);
-        usersURL = args[0];
-        cameraURL = args[1];
-        faceLogURL = args[2];
-        init();
-        System.out.println("inited.");
 
-        if (videoCapture == -1) {
-            System.out.println("open video err.");
-            return;
-        }
-
-
-        Thread thread = new Thread(() -> {
-            while (true) {
-                try {
-                    if (faceSDK.isVideoOpened(videoCapture)) {
-                        long start = System.currentTimeMillis();
-                        execute();
-                        long end = System.currentTimeMillis();
-//                        System.out.println("execute:" + (end - start) + "ms");
+    private static void commitFace() {
+        if (faceLogEntities.size() > COMMIT_SIZE || System.currentTimeMillis() - time > COMMIT_TIME) {
+            if (saveLog() != 0) {
+                System.out.println("提交Log失败");
+                for (FaceLogEntity faceLogEntity : faceLogEntities) {
+                    File file = new File(faceLogEntity.getLogImg());
+                    if (file.exists()) {
+                        try {
+                            FileUtils.forceDelete(file);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
-        });
-        thread.setDaemon(true);
-        thread.start();
 
-        while (true) {
-            if (!faceSDK.isVideoOpened(videoCapture) || faceSDK.read(videoCapture, frame) == -1) {
-                System.err.println("read img err.");
-                faceSDK.releaseVideo(videoCapture);
-//                videoCapture = faceSDK.VideoCapture(videoURL.toCharArray());
-//                continue;
-                // 不重新尝试连接，直接结束。
-                System.exit(1);
-            }
-//            faceSDK.showMat(frame);
-//            faceSDK.waitKey(1);
-
-
+            // 不管成功失败都丢弃
+            faceLogEntities.clear();
+            time = System.currentTimeMillis();
         }
     }
 
-    private static int ID;
-    private static Map<Integer, TrackData> trackMap = new HashMap<>();
+    private static void discern() throws InvocationTargetException, IllegalAccessException {
+        for (Map.Entry<Integer, TrackData> dataEntry : trackMap.entrySet()) {
+            // 已提交过的避免重复提交
+            TrackData td = dataEntry.getValue();
+            if (td.commited) continue;
+//            if (Math.abs(td.faceBox.angle) < 50) continue;
 
-    private static void execute() throws Exception {
+            SimilarData similarData = getSimilarData(td.faceBox.embedding);
 
-        // 删除超过1秒未再次出现的数据
-        trackMap.entrySet().removeIf(entry -> {
-            TrackData td = entry.getValue();
-            boolean delete = ((System.currentTimeMillis() - td.updateTime.getTime()) > OUT_TIME);
+            double sumSimilar = 0;
+            double avgSimilar = 0;
+            for (FACE_BOX faceBox : td.faceBoxes) {
+                SimilarData sd = getSimilarData(faceBox.embedding);
+                sumSimilar += sd.maxSimilar;
+            }
 
-            if (delete) {
+            avgSimilar = sumSimilar / td.faceBoxes.size();
 
+            // 头偏的太厉害,左右超过50度 ，范围为  0~90 度
+            if (Math.abs(td.faceBox.angle) > MAX_ANGLE) continue;
+
+            // 超过阈值可以发送
+            if (similarData.maxSimilar > SUCCESS_SIMILAR) {
+                commit(similarData.maxEntity, td/*, logImg*/);
+            } else if (avgSimilar < 0.4) {
+
+//                 未识别的时间
                 long unknownTime = td.updateTime.getTime() - td.createTime.getTime();
 
                 double sum = 0;
@@ -261,33 +250,40 @@ public class Main {
                     sum += Math.min(90, Math.abs(faceBox.angle));
                 }
 
-                // 删除前未被识别
-                if (!td.commited && td.faceBoxes.size() > REMOVE_UNKNOWN_SIZE && (sum / td.faceBoxes.size()) < MAX_AVG_ANGLE) {
-                    System.out.println("commit avg:" + (sum / td.faceBoxes.size()));
-                    try {
-                        commit(SimilarData.STRANGER, td);
-                    } catch (InvocationTargetException | IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                // 删除要释放
-                if (td.mat > 0) {
-                    faceSDK.releaseMat(td.mat);
-                    td.mat = -1;
+//                 超过2秒未被识别，并且追踪到3张照片,断定为陌生人
+                if ((unknownTime > UNKNOWN_TIME && td.faceBoxes.size() > UNKNOWN_FACE_SIZE && (sum / td.faceBoxes.size()) < MAX_AVG_ANGLE)) {
+                    System.out.println("commit avg1:" + (sum / td.faceBoxes.size()));
+                    commit(SimilarData.STRANGER, td/*, logImg*/);
                 }
             }
-            return delete;
-        });
 
-        String id = UUID.randomUUID().toString().toUpperCase().replace("-", "");
-        boolean save = false;
-        String logImg = id + ".jpg";
+        }
+    }
 
-        // 处理时间较久，避免在处理过程中图片发生变化
-        long frameClone = faceSDK.createMat();
-        faceSDK.cloneMat(frame, frameClone);
+    /**
+     * 显示追踪
+     *
+     * @param frameClone
+     */
+    private static void showTrackFace(long frameClone) {
+        for (Map.Entry<Integer, TrackData> td : trackMap.entrySet()) {
 
+            TrackData value = td.getValue();
+            Integer key = td.getKey();
+
+            faceSDK.rectangleMat(frameClone, value.faceBox.x, value.faceBox.y, value.faceBox.width, value.faceBox.height, 255, 0, 0);
+            faceSDK.putTextMat(frameClone, ("Number:" + key + ",angle:" + value.faceBox.angle).toCharArray(), value.faceBox.x, value.faceBox.y, 0, 1, 255, 0, 0);
+        }
+        faceSDK.showMat("frameClone".toCharArray(), frameClone);
+        faceSDK.waitKey(1);
+    }
+
+    /**
+     * 追踪， trackMap
+     *
+     * @param frameClone
+     */
+    private static void trackFace(long frameClone) {
         ArrayList<FACE_BOX> faceBoxes = new ArrayList<FACE_BOX>();
 
         long start = System.currentTimeMillis();
@@ -339,7 +335,8 @@ public class Main {
                 if (maxData.commited) continue;
 
                 // 历史追踪就可以考虑上次角度要小于这次，才替换图片
-                if (Math.abs(maxData.minAngleFaceBox.angle) < Math.abs(faceBox.angle)) {
+                if (Math.abs(maxData.minAngleFaceBox.angle) > Math.abs(faceBox.angle)) {
+
                     maxData.minAngleFaceBox = faceBox;
 
                     if (maxData.mat > 0) {
@@ -356,46 +353,19 @@ public class Main {
         }
         long end = System.currentTimeMillis();
 //        System.out.println("track:" + (end - start) + "ms");
+    }
 
+    /**
+     * 删除超时，并提交超时的陌生人
+     */
+    private static void clearTimeOutFace() {
+        // 删除超过1秒未再次出现的数据
+        trackMap.entrySet().removeIf(entry -> {
+            TrackData td = entry.getValue();
+            boolean delete = ((System.currentTimeMillis() - td.updateTime.getTime()) > OUT_TIME);
 
- /*       for (Map.Entry<Integer, TrackData> td : trackMap.entrySet()) {
+            if (delete) {
 
-            TrackData value = td.getValue();
-            Integer key = td.getKey();
-
-            faceSDK.rectangleMat(frameClone, value.faceBox.x, value.faceBox.y, value.faceBox.width, value.faceBox.height, 255, 0, 0);
-            faceSDK.putTextMat(frameClone, ("Number:" + key + ",angle:" + value.faceBox.angle).toCharArray(), value.faceBox.x, value.faceBox.y, 0, 1, 255, 0, 0);
-        }
-        faceSDK.showMat("frameClone".toCharArray(), frameClone);
-        faceSDK.waitKey(1);*/
-
-        for (Map.Entry<Integer, TrackData> dataEntry : trackMap.entrySet()) {
-            // 已提交过的避免重复提交
-            TrackData td = dataEntry.getValue();
-            if (td.commited) continue;
-//            if (Math.abs(td.faceBox.angle) < 50) continue;
-
-            SimilarData similarData = getSimilarData(td.faceBox.embedding);
-
-            double sumSimilar = 0;
-            double avgSimilar = 0;
-            for (FACE_BOX faceBox : td.faceBoxes) {
-                SimilarData sd = getSimilarData(faceBox.embedding);
-                sumSimilar += sd.maxSimilar;
-            }
-
-            avgSimilar = sumSimilar / td.faceBoxes.size();
-
-            // 头偏的太厉害,左右超过50度 ，范围为  0~90 度
-            if (Math.abs(td.faceBox.angle) > MAX_ANGLE) continue;
-
-            // 超过阈值可以发送
-            if (similarData.maxSimilar > SUCCESS_SIMILAR) {
-                save = true;
-                commit(similarData.maxEntity, td/*, logImg*/);
-            } else if (avgSimilar < 0.4) {
-
-//                 未识别的时间
                 long unknownTime = td.updateTime.getTime() - td.createTime.getTime();
 
                 double sum = 0;
@@ -403,33 +373,24 @@ public class Main {
                     sum += Math.min(90, Math.abs(faceBox.angle));
                 }
 
-//                 超过2秒未被识别，并且追踪到3张照片,断定为陌生人
-                if ((unknownTime > UNKNOWN_TIME && td.faceBoxes.size() > UNKNOWN_FACE_SIZE && (sum / td.faceBoxes.size()) < MAX_AVG_ANGLE)) {
-                    System.out.println("commit avg1:" + (sum / td.faceBoxes.size()));
-                    save = true;
-                    commit(SimilarData.STRANGER, td/*, logImg*/);
+                // 删除前未被识别
+                if (!td.commited && td.faceBoxes.size() > REMOVE_UNKNOWN_SIZE && (sum / td.faceBoxes.size()) < MAX_AVG_ANGLE) {
+                    System.out.println("commit avg:" + (sum / td.faceBoxes.size()));
+                    try {
+                        commit(SimilarData.STRANGER, td);
+                    } catch (InvocationTargetException | IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                // 删除要释放
+                if (td.mat > 0) {
+                    faceSDK.releaseMat(td.mat);
+                    td.mat = -1;
                 }
             }
-
-        }
-
-/*        if (save) {
-            faceSDK.writeMat(frameClone, (logImg).toCharArray());
-        }*/
-        if (faceLogEntities.size() > COMMIT_SIZE || System.currentTimeMillis() - time > COMMIT_TIME) {
-            if (saveLog() != 0) {
-                System.out.println("提交Log失败");
-                for (FaceLogEntity faceLogEntity : faceLogEntities) {
-                    File file = new File(faceLogEntity.getLogImg());
-                    if (file.exists()) FileUtils.forceDelete(file);
-                }
-            }
-
-            // 不管成功失败都丢弃
-            faceLogEntities.clear();
-            time = System.currentTimeMillis();
-        }
-        faceSDK.releaseMat(frameClone);
+            return delete;
+        });
     }
 
     private static void commit(FaceUserEntity faceUserEntity, TrackData td, String logImg) throws InvocationTargetException, IllegalAccessException {
@@ -488,18 +449,102 @@ public class Main {
         return new SimilarData(maxSimilar, maxEntity);
     }
 
-    private static void init() throws IOException {
+
+    public static void main(String[] args) throws Exception {
+        int pid = getProcessID();
+        File file = new File(pid + ".pid");
+        boolean newFile = file.createNewFile();
+        FileUtils.forceDeleteOnExit(file);
+
+        init(args);
+        System.out.println("inited.");
+
+        if (videoCapture == -1) {
+            System.out.println("open video err.");
+            return;
+        }
+
+
+        Thread thread = new Thread(() -> {
+            //noinspection InfiniteLoopStatement
+            while (true) {
+                try {
+                    if (faceSDK.isVideoOpened(videoCapture)) {
+                        long start = System.currentTimeMillis();
+                        execute();
+                        long end = System.currentTimeMillis();
+//                        System.out.println("execute:" + (end - start) + "ms");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+
+        while (true) {
+            if (!faceSDK.isVideoOpened(videoCapture) || faceSDK.read(videoCapture, frame) == -1) {
+                System.err.println("read img err.");
+                faceSDK.releaseVideo(videoCapture);
+//                videoCapture = faceSDK.VideoCapture(videoURL.toCharArray());
+//                continue;
+                // 不重新尝试连接，直接结束。
+                System.exit(1);
+            }
+//            faceSDK.showMat(frame);
+//            faceSDK.waitKey(1);
+
+
+        }
+    }
+
+    private static void execute() throws Exception {
+
+
+        // 清除过期的人脸，并提交陌生人
+        clearTimeOutFace();
+
+        // 处理时间较久，避免在处理过程中图片发生变化
+        long frameClone = faceSDK.createMat();
+        try {
+            faceSDK.cloneMat(frame, frameClone);
+
+            // 追踪
+            trackFace(frameClone);
+
+            // 显示追踪
+            //showTrackFace(frameClone);
+        } finally {
+            faceSDK.releaseMat(frameClone);
+        }
+
+        // 对追踪结果识别，比较
+        discern();
+
+        // 判断是否提交
+        commitFace();
+
+
+    }
+
+    private static void init(String[] args) throws IOException {
 
         System.setOut(new PrintStream(new FileOutputStream("out.log")));
         System.setErr(new PrintStream(new FileOutputStream("err.log")));
+
+        usersURL = args[0];
+        cameraURL = args[1];
+        faceLogURL = args[2];
 
         faceLogEntities = new ArrayList<>();
         duplicationMap = new HashMap<>();
 
         faceSDK = new FaceSDK();
         frame = faceSDK.createMat();
-        faceSDK.faceModelConf(new float[]{0.9f, 0.9f, 0.99f}, 120);
-        faceSDK.faceModelInit(4);
+//        faceSDK.faceModelConf(new float[]{0.8f, 0.8f, 0.9f}, 100);
+        faceSDK.faceModelConf(new float[]{0.9f, 0.9f, 0.99f},60);
+        faceSDK.faceModelInit(8);
         faceUserEntityList = getFaceUsers(usersURL);
         if (faceUserEntityList.isEmpty()) throw new RuntimeException("no face user.");
         cameraEntity = getCameraInfo(cameraURL);
